@@ -962,6 +962,8 @@ describe("every page: its headers, its scripts and who built it", () => {
       const { html } = await page(path);
       const footer = /<footer>([\s\S]*?)<\/footer>/.exec(html)?.[1] ?? "";
       expect(footer, path).toContain('Built by <a href="https://github.com/HamdanEsmail" rel="author">Hamdan Esmail</a>');
+      // The code is public, and every footer links it.
+      expect(footer, path).toContain('<a href="https://github.com/HamdanEsmail/groundwork">GitHub</a>');
       expect(html, path).toContain('<meta name="author" content="Hamdan Esmail"/>');
     }
   });

@@ -1,5 +1,7 @@
 # Groundwork
 
+![The Groundwork home: a contact sheet of 1866 survey plates and city pages as they were read, with the address form in the middle cell under "What nine public records hold on one Philadelphia address"](docs/hero.jpg)
+
 Groundwork builds a Philadelphia property dossier from public sources. It returns JSON and a readable report with source links, evidence and gaps. Watches can record changes in assessment and licensing pages.
 
 Live URL: **https://groundwork.hamdanesmail12-7a9.workers.dev**
