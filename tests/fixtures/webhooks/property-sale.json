@@ -1,0 +1,11 @@
+{
+  "id": "property-sale",
+  "fetch_monitor_id": "example-monitor",
+  "outcome": "changed",
+  "results": [
+    {
+      "text": "# 100 EXAMPLE ST\n\n|  |  |\n| --- | --- |\n| OPA Account # | 111111111 |\n| Sale Date | 02/01/2026 |\n| Sale Price | $200 |\n"
+    }
+  ],
+  "errors": []
+}

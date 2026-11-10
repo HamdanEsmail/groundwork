@@ -1,0 +1,5 @@
+{
+  "_note": "hand-built until a real run is recorded",
+  "years": [{ "year": "2025", "market_value": "$1,000", "taxable_land": "$100",
+    "taxable_improvement": "$900", "exempt_land": "$0", "exempt_improvement": "$0" }]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "li-loading",
+  "fetch_monitor_id": "example-monitor",
+  "outcome": "changed",
+  "results": [
+    {
+      "text": "# 100 EXAMPLE ST\n\nLoading permits...\n"
+    }
+  ],
+  "errors": []
+}

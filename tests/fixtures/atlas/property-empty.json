@@ -1,0 +1,9 @@
+{
+  "results": [],
+  "errors": [
+    {
+      "url": "https://atlas.phila.gov/1234%20market%20st./property",
+      "error": "empty_content"
+    }
+  ]
+}

@@ -1,0 +1,244 @@
+{
+  "run_id": "6e376b6b-1b1d-4b99-92ca-346211ac7fe0",
+  "status": "COMPLETED",
+  "goal": "Navigate to https://li.phila.gov/property-history/search to complete the goal: Search this Licenses & Inspections property history site for the address '1234 Market St, Philadelphia, PA 19107'. Open the property's history page. Return the URL of that page, the count of permits shown, the 5 most recent permits (permit number, type, status, issue date), the count of violations shown, the 3 most recent violations (case number, violation type, status, date), and whether any licenses or appeals are listed. Do not use any other website. If the site requires selecting a result from a list, pick the exact address match.",
+  "created_at": "2026-11-03T10:30:34Z",
+  "started_at": "2026-11-03T10:30:37Z",
+  "finished_at": "2026-11-03T10:31:56Z",
+  "num_of_steps": 9,
+  "result": {
+    "blocked": false,
+    "permits": [
+      {
+        "date": "Sep 15, 2026",
+        "type": "Electrical Permit",
+        "number": "EP-2026-004102",
+        "status": ""
+      },
+      {
+        "date": "Sep 09, 2026",
+        "type": "Electrical Permit",
+        "number": "EP-2026-008229",
+        "status": ""
+      },
+      {
+        "date": "Apr 15, 2026",
+        "type": "Electrical Permit",
+        "number": "EP-2026-001215",
+        "status": ""
+      },
+      {
+        "date": "Feb 05, 2026",
+        "type": "Mechanical / Fuel Gas Permit",
+        "number": "MP-2025-005640",
+        "status": ""
+      },
+      {
+        "date": "Feb 04, 2026",
+        "type": "Commercial Building Permit",
+        "number": "CP-2025-006422",
+        "status": ""
+      }
+    ],
+    "page_url": "https://li.phila.gov/property-history/search?address=1234%20MARKET%20ST",
+    "violations": [
+      {
+        "case": "427902",
+        "date": "Apr 24, 2014",
+        "type": "STANDARD",
+        "status": ""
+      },
+      {
+        "case": "376748",
+        "date": "Apr 19, 2013",
+        "type": "STANDARD",
+        "status": ""
+      },
+      {
+        "case": "375056",
+        "date": "Apr 05, 2013",
+        "type": "STANDARD",
+        "status": ""
+      }
+    ],
+    "permits_count": 155,
+    "licenses_listed": true,
+    "violations_count": 83
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "permits",
+      "violations"
+    ],
+    "properties": {
+      "blocked": {
+        "type": "boolean",
+        "nullable": true
+      },
+      "permits": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "type": "string",
+              "nullable": true
+            },
+            "type": {
+              "type": "string",
+              "nullable": true
+            },
+            "number": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      },
+      "page_url": {
+        "type": "string",
+        "nullable": true
+      },
+      "violations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "case": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string",
+              "nullable": true
+            },
+            "type": {
+              "type": "string",
+              "nullable": true
+            },
+            "status": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      },
+      "permits_count": {
+        "type": "integer",
+        "nullable": true
+      },
+      "licenses_listed": {
+        "type": "boolean",
+        "nullable": true
+      },
+      "violations_count": {
+        "type": "integer",
+        "nullable": true
+      }
+    }
+  },
+  "profile_attached": false,
+  "profile_id": null,
+  "error": null,
+  "streaming_url": "https://stream.example.test/tf-cdccef25-8489-40ff-b5cf-c4f7538773e7/stream/0",
+  "browser_config": {
+    "proxy_enabled": false,
+    "proxy_country_code": null
+  },
+  "video_url": null,
+  "steps": [
+    {
+      "id": "62ae371b-d25e-4c57-9073-6cca366dac68",
+      "timestamp": "2026-11-03T10:30:38Z",
+      "status": "RUNNING",
+      "action": "Navigate to property history search page",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.0s"
+    },
+    {
+      "id": "43ad3018-9cd9-48a6-bf1c-2bb7a925a60b",
+      "timestamp": "2026-11-03T10:30:45Z",
+      "status": "RUNNING",
+      "action": "Enter the property address to search",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.1s"
+    },
+    {
+      "id": "8a1ae376-504c-4fae-b649-5a687353d761",
+      "timestamp": "2026-11-03T10:30:54Z",
+      "status": "RUNNING",
+      "action": "Submit the address search",
+      "screenshot": null,
+      "html": null,
+      "duration": "5.3s"
+    },
+    {
+      "id": "9d1c2934-aaf2-4775-8bfe-c7b32a975238",
+      "timestamp": "2026-11-03T10:31:04Z",
+      "status": "RUNNING",
+      "action": "Expand permits section to see details",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.1s"
+    },
+    {
+      "id": "d084df6c-1a78-4042-8ae1-3cac49fb6c90",
+      "timestamp": "2026-11-03T10:31:08Z",
+      "status": "RUNNING",
+      "action": "Extract permit details from the page",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.6s"
+    },
+    {
+      "id": "1ddb2e3d-e263-44c0-b937-65c9fc02614a",
+      "timestamp": "2026-11-03T10:31:15Z",
+      "status": "RUNNING",
+      "action": "Expand violations section to see details",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.2s"
+    },
+    {
+      "id": "f3ee7697-68b3-4340-9d1a-79f2a6c036de",
+      "timestamp": "2026-11-03T10:31:17Z",
+      "status": "RUNNING",
+      "action": "Extract violation details from page",
+      "screenshot": null,
+      "html": null,
+      "duration": "3.5s"
+    },
+    {
+      "id": "bb5cd7e4-18df-49cc-953c-e4de74e95980",
+      "timestamp": "2026-11-03T10:31:24Z",
+      "status": "RUNNING",
+      "action": "Check for licenses and appeals sections",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.5s"
+    },
+    {
+      "id": "fe85f36d-c099-46d2-8a73-d191a3af70b3",
+      "timestamp": "2026-11-03T10:31:53Z",
+      "status": "RUNNING",
+      "action": "Return search results for 1234 Market St property history",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.3s"
+    },
+    {
+      "id": "cdb8bc58-ab9d-4ab8-8c96-ba113579d40a",
+      "timestamp": "2026-11-03T10:31:55Z",
+      "status": "COMPLETED",
+      "action": "Task completed",
+      "screenshot": null,
+      "html": null,
+      "duration": null
+    }
+  ]
+}

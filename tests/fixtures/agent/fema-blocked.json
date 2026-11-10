@@ -1,0 +1,184 @@
+{
+  "run_id": "b4fc9fc9-6275-4eac-85b5-9edf903ada55",
+  "status": "COMPLETED",
+  "goal": "Navigate to https://msc.fema.gov/portal/search to complete the goal: Enter the address '1234 Market St, Philadelphia, PA 19107' into the address search on this FEMA Flood Map Service Center page and search. From the results, return: the flood zone designation shown for the address (for example 'Zone X' or 'Zone AE'), the effective FIRM panel number and its effective date if shown, the URL of the results page, and the text of any 'flood hazard' summary shown. Do not download files.",
+  "created_at": "2026-11-03T10:32:27Z",
+  "started_at": "2026-11-03T10:32:30Z",
+  "finished_at": "2026-11-03T10:34:27Z",
+  "num_of_steps": 13,
+  "result": {
+    "blocked": true,
+    "summary": null,
+    "firm_panel": null,
+    "flood_zone": null,
+    "results_url": "https://msc.fema.gov/portal/search",
+    "effective_date": null
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [],
+    "properties": {
+      "blocked": {
+        "type": "boolean",
+        "nullable": true
+      },
+      "summary": {
+        "type": "string",
+        "nullable": true
+      },
+      "firm_panel": {
+        "type": "string",
+        "nullable": true
+      },
+      "flood_zone": {
+        "type": "string",
+        "nullable": true
+      },
+      "results_url": {
+        "type": "string",
+        "nullable": true
+      },
+      "effective_date": {
+        "type": "string",
+        "nullable": true
+      }
+    }
+  },
+  "profile_attached": false,
+  "profile_id": null,
+  "error": null,
+  "streaming_url": "https://placeholder.invalid/tf-03a6cac9-060d-4027-a087-7ce539c51895/stream/1",
+  "browser_config": {
+    "proxy_enabled": false,
+    "proxy_country_code": null
+  },
+  "video_url": null,
+  "steps": [
+    {
+      "id": "d99f3832-8323-4e20-aefd-4fefa4ca922f",
+      "timestamp": "2026-11-03T10:32:30Z",
+      "status": "RUNNING",
+      "action": "Visit FEMA Flood Map Service Center search page",
+      "screenshot": null,
+      "html": null,
+      "duration": "28.5s"
+    },
+    {
+      "id": "2a6c8a00-0871-4845-a950-2f9cf6335c30",
+      "timestamp": "2026-11-03T10:33:13Z",
+      "status": "RUNNING",
+      "action": "Enter the address to search",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.2s"
+    },
+    {
+      "id": "6bc30145-7664-4f00-a469-98892c2ae837",
+      "timestamp": "2026-11-03T10:33:32Z",
+      "status": "RUNNING",
+      "action": "Submit the address search",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.4s"
+    },
+    {
+      "id": "6299109d-30a9-4022-84ff-a4287e7966d9",
+      "timestamp": "2026-11-03T10:33:35Z",
+      "status": "RUNNING",
+      "action": "Get search results information",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.1s"
+    },
+    {
+      "id": "95e8383d-aea3-4c02-89c9-470838570f9a",
+      "timestamp": "2026-11-03T10:33:39Z",
+      "status": "RUNNING",
+      "action": "Check page state after search",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.1s"
+    },
+    {
+      "id": "e221e11b-741a-4bc0-ab83-14434ae8ec7c",
+      "timestamp": "2026-11-03T10:33:45Z",
+      "status": "RUNNING",
+      "action": "Trigger search by pressing Enter in address field",
+      "screenshot": null,
+      "html": null,
+      "duration": "0.9s"
+    },
+    {
+      "id": "e16ded3d-e13a-426f-89b1-7934f663fe27",
+      "timestamp": "2026-11-03T10:33:48Z",
+      "status": "RUNNING",
+      "action": "Check page state after Enter press",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.0s"
+    },
+    {
+      "id": "b0f89423-5d26-4eab-81f5-898b09e55b80",
+      "timestamp": "2026-11-03T10:33:52Z",
+      "status": "RUNNING",
+      "action": "Wait for potential page updates",
+      "screenshot": null,
+      "html": null,
+      "duration": "3.2s"
+    },
+    {
+      "id": "9fcb5285-490c-4cd3-9705-0de31a173283",
+      "timestamp": "2026-11-03T10:33:59Z",
+      "status": "RUNNING",
+      "action": "Check full page content after search attempts",
+      "screenshot": null,
+      "html": null,
+      "duration": "2.2s"
+    },
+    {
+      "id": "d018b433-ec73-481d-a56c-8cee377d5085",
+      "timestamp": "2026-11-03T10:34:06Z",
+      "status": "RUNNING",
+      "action": "Click search button again to trigger search",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.1s"
+    },
+    {
+      "id": "5ee4e81c-0a5b-4186-bcc2-63821e259106",
+      "timestamp": "2026-11-03T10:34:09Z",
+      "status": "RUNNING",
+      "action": "Visual inspection of current page state",
+      "screenshot": null,
+      "html": null,
+      "duration": "5.0s"
+    },
+    {
+      "id": "75b2c5fa-7401-41fc-9095-450f681fd12f",
+      "timestamp": "2026-11-03T10:34:18Z",
+      "status": "RUNNING",
+      "action": "Click the address link to see if it triggers search",
+      "screenshot": null,
+      "html": null,
+      "duration": "1.3s"
+    },
+    {
+      "id": "0fc134eb-8d20-4362-a635-13141ad4232c",
+      "timestamp": "2026-11-03T10:34:23Z",
+      "status": "RUNNING",
+      "action": "Report findings: address search did not return results on FEMA MSC",
+      "screenshot": null,
+      "html": null,
+      "duration": "0.0s"
+    },
+    {
+      "id": "03863e53-f120-4094-a275-d7022a33979e",
+      "timestamp": "2026-11-03T10:34:26Z",
+      "status": "COMPLETED",
+      "action": "Task completed",
+      "screenshot": null,
+      "html": null,
+      "duration": null
+    }
+  ]
+}

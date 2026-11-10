@@ -1,0 +1,11 @@
+{
+  "id": "li-changed",
+  "fetch_monitor_id": "example-monitor",
+  "outcome": "changed",
+  "results": [
+    {
+      "text": "# 100 EXAMPLE ST\n\n## Permits (2)\n\n| Date | ID | Description | Status |\n| --- | --- | --- | --- |\n| 02/01/2026 | P-101 | Example repair | Issued |\n| 01/01/2026 | P-100 | Example work | Issued |\n\n## Violations (1)\n\n| Date | ID | Description | Status |\n| --- | --- | --- | --- |\n| 01/02/2026 | V-100 | Example issue | CLOSED |\n"
+    }
+  ],
+  "errors": []
+}

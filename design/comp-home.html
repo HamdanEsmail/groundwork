@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Groundwork: what Philadelphia holds on one address</title>
+<meta name="description" content="Type a Philadelphia address. Groundwork reads nine official city sources and returns one dossier, every record linked to the page it came from.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../public/assets/site.css">
+<script>document.documentElement.classList.add("js")</script>
+</head>
+<body>
+<main>
+<div class="sheet" id="top">
+<div class="col"><figure class="frame rise" style="--d:70ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/baldwin.jpg" alt="Hand-coloured plan of the blacksmith shops of the Baldwin Locomotive Works" style="object-position:20% 22%" decoding="async"></span><figcaption class="strip s1">Baldwin Locomotive Works, 1866</figcaption></figure><figure class="frame rise" style="--d:140ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/market-licences.jpg" alt="The city's licences and inspections page for 1234 Market St as it was read" style="object-position:0 0" decoding="async"></span><figcaption class="strip s3">Licences, 1234 Market St</figcaption></figure><figure class="frame rise" style="--d:210ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/paper.jpg" alt="Survey plate of a paper mill on the Wissahickon" style="object-position:50% 30%" decoding="async"></span><figcaption class="strip s2">Wissahickon Paper Mills, 1866</figcaption></figure><figure class="frame rise" style="--d:280ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/woolen.jpg" alt="Detail of a woolen mill survey with its written description" style="object-position:50% 70%" loading="lazy" decoding="async"></span><figcaption class="strip s4">Shaw's Woolen Mills, 1866</figcaption></figure></div>
+<div class="col"><figure class="frame rise" style="--d:350ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/hosiery.jpg" alt="Plan of the Germantown Hosiery Mills with each building numbered" style="object-position:30% 40%" decoding="async"></span><figcaption class="strip s1">Germantown Hosiery Mills, 1866</figcaption></figure><figure class="frame rise" style="--d:0ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/midvale.jpg" alt="Bird's-eye drawing of the Midvale Steel Works" style="object-position:78% 88%" decoding="async"></span><figcaption class="strip s3">Midvale Steel Works, 1879</figcaption></figure><figure class="frame rise" style="--d:70ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/germantown-assessment.jpg" alt="The city's assessment page for 5600 Germantown Ave as it was read" style="object-position:0 0" decoding="async"></span><figcaption class="strip s2">Assessment, 5600 Germantown</figcaption></figure><figure class="frame rise" style="--d:140ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/glen-echo.jpg" alt="Detail of the Glen Echo Mills survey" style="object-position:40% 60%" loading="lazy" decoding="async"></span><figcaption class="strip s4">Glen Echo Mills, 1866</figcaption></figure></div>
+<div class="mid"><div class="pair top"><div class="col"><figure class="frame rise" style="--d:210ms"><span class="pic" style="aspect-ratio:5/4"><img src="../public/assets/plates/shot-tower.jpg" alt="Elevation of the Sparks Shot Tower from an 1880 survey" style="object-position:30% 50%" decoding="async"></span><figcaption class="strip s1">Sparks Shot Tower, 1880</figcaption></figure></div><div class="col"><figure class="frame rise" style="--d:280ms"><span class="pic" style="aspect-ratio:5/4"><img src="../public/assets/plates/carriage.jpg" alt="Title of a survey plate for a carriage works" style="object-position:50% 20%" decoding="async"></span><figcaption class="strip s3">Carriage works, 1866</figcaption></figure></div></div><div class="cell">
+  <p class="mark">Groundwork</p>
+  <h1>What nine Philadelphia offices hold on one address, each record linked to its source.</h1>
+  <form class="ask" action="#" method="get">
+    <label for="address">Address or OPA account</label>
+    <input id="address" name="address" placeholder="1234 Market St" autocomplete="off" required maxlength="200">
+    <button class="btn" type="submit">Draw the dossier</button>
+  </form>
+  <p class="tries">Try <a href="#">1234 Market St</a><a href="#">5600 Germantown Ave</a><a href="#">4001 Walnut St</a></p>
+  <nav aria-label="Pages"><a href="#sources">Sources</a><a href="#">Watchlist</a><a href="#">JSON API</a></nav>
+</div><div class="pair"><div class="col"><figure class="frame rise" style="--d:350ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/walnut-zoning.jpg" alt="The city's zoning page for 4001 Walnut St as it was read" style="object-position:0 0" decoding="async"></span><figcaption class="strip s2">Zoning, 4001 Walnut St</figcaption></figure><figure class="frame rise" style="--d:0ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/perseverance.jpg" alt="Plan of the Perseverance Mills" style="object-position:50% 45%" loading="lazy" decoding="async"></span><figcaption class="strip s4">Perseverance Mills, 1866</figcaption></figure></div><div class="col"><figure class="frame rise" style="--d:70ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/midvale.jpg" alt="Plan of the Midvale Steel Works foundry and hammer shop" style="object-position:30% 55%" decoding="async"></span><figcaption class="strip s1">Midvale Steel Works, 1879</figcaption></figure><figure class="frame rise" style="--d:140ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/market-deeds.jpg" alt="The city's deeds page for 1234 Market St as it was read" style="object-position:0 0" loading="lazy" decoding="async"></span><figcaption class="strip s3">Deeds, 1234 Market St</figcaption></figure></div></div></div>
+<div class="col"><figure class="frame rise" style="--d:210ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/glen-echo.jpg" alt="Title and plan of the Glen Echo Mills survey" style="object-position:55% 18%" decoding="async"></span><figcaption class="strip s2">Glen Echo Mills, 1866</figcaption></figure><figure class="frame rise" style="--d:280ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/germantown-zoning.jpg" alt="The city's zoning page for 5600 Germantown Ave as it was read" style="object-position:0 0" decoding="async"></span><figcaption class="strip s4">Zoning, 5600 Germantown</figcaption></figure><figure class="frame rise" style="--d:350ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/carriage.jpg" alt="Plan of a carriage works, each floor described" style="object-position:45% 62%" decoding="async"></span><figcaption class="strip s1">Carriage works, 1866</figcaption></figure><figure class="frame rise" style="--d:0ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/baldwin.jpg" alt="The erecting shop on the Baldwin Locomotive Works plan" style="object-position:70% 80%" loading="lazy" decoding="async"></span><figcaption class="strip s3">Baldwin Locomotive Works, 1866</figcaption></figure></div>
+<div class="col"><figure class="frame rise" style="--d:70ms"><span class="pic" style="aspect-ratio:1/1"><img src="../public/assets/plates/midvale.jpg" alt="The written description on the Midvale Steel Works plate: owner, walls, roof, boilers" style="object-position:88% 30%" decoding="async"></span><figcaption class="strip s2">Midvale Steel Works, 1879</figcaption></figure><figure class="frame rise" style="--d:140ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/perseverance.jpg" alt="Lower half of the Perseverance Mills plate" style="object-position:50% 80%" decoding="async"></span><figcaption class="strip s4">Perseverance Mills, 1866</figcaption></figure><figure class="frame rise" style="--d:210ms"><span class="pic" style="aspect-ratio:8/5"><img src="../public/assets/captures/walnut-assessment.jpg" alt="The city's assessment page for 4001 Walnut St as it was read" style="object-position:0 0" decoding="async"></span><figcaption class="strip s1">Assessment, 4001 Walnut St</figcaption></figure><figure class="frame rise" style="--d:280ms"><span class="pic" style="aspect-ratio:4/5"><img src="../public/assets/plates/hosiery.jpg" alt="Detail of the Germantown Hosiery Mills plate" style="object-position:70% 75%" loading="lazy" decoding="async"></span><figcaption class="strip s3">Germantown Hosiery Mills, 1866</figcaption></figure></div>
+</div>
+
+<section aria-labelledby="plate">
+  <div class="board shutter">
+    <picture class="drift">
+      <source media="(max-width:820px)" srcset="../public/assets/plates/baldwin.jpg">
+      <img src="../public/assets/plates/midvale.jpg" alt="Ernest Hexamer's 1879 survey of the Midvale Steel Works: a coloured plan, a bird's-eye view and a written description of the property" loading="lazy" decoding="async">
+    </picture>
+    <div class="tile say h blue t1"><h2 id="plate">Drawn in 1879</h2><small>Midvale Steel Works, Nicetown. Surveyed for fire insurers, one plate per property.</small></div>
+    <div class="tile say inkt t2"><small>Walls</small><p>Brick, mostly 21 inches thick.</p></div>
+    <div class="tile say pale t3"><small>Boilers</small><p>18 on the premises.</p></div>
+    <div class="tile say wash t4"><small>Watchman</small><p>Night and Sunday, constantly.</p></div>
+    <a class="tile say go t5" href="#"><p>Today's is read from the city's own pages. Open one.</p><svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true"><path d="M10 62 60 12M24 12h36v36"/></svg></a>
+  </div>
+</section>
+
+<section class="wrap" aria-labelledby="how">
+  <div class="run">
+    <h2 id="how" class="rise">How a dossier is drawn</h2>
+    <p class="rise"><b>To begin,</b> type the address the way you would say it. A trailing full stop, a ZIP code or lower case all land on the same parcel, and a condominium building answers with its units. An address the city does not hold is reported as no match, never guessed.</p>
+    <div class="ev ui rise" data-ui>
+      <div class="row"><span class="k">You typed</span><span class="v">1234 Market St Philadelphia PA 19107</span></div>
+      <div class="row"><span class="k">The city holds</span><span class="v">1234 MARKET ST, PHILADELPHIA, PA 19107-3721</span></div>
+      <div class="row"><span class="k">OPA account</span><span class="v">883309050</span></div>
+    </div>
+    <p class="rise"><b>Within a minute,</b> TinyFish Fetch reads four pages of the city atlas: assessment and sale, zoning, licences and inspections, deeds. A page that is still loading is read again. One that will not load becomes a marked gap with the link to check by hand.</p>
+    <div class="ev three rise">
+      <img src="../public/assets/captures/market-licences.jpg" alt="The licences and inspections page as read" loading="lazy">
+      <img src="../public/assets/captures/germantown-assessment.jpg" alt="An assessment page as read" loading="lazy">
+      <img src="../public/assets/captures/walnut-zoning.jpg" alt="A zoning page as read" loading="lazy">
+    </div>
+    <p class="rise"><b>On request,</b> TinyFish Agent opens the five offices that have no simple page: assessment history, the tax balance, the flood map, catchment schools and the full permit history. Each read is capped, and its price is shown before it starts.</p>
+    <div class="ev ui rise" data-ui>
+      <div class="row"><span>Real estate tax, Department of Revenue</span><span class="v">up to $0.224</span></div>
+      <div class="row"><span>Flood zone, FEMA</span><span class="v">up to $0.224</span></div>
+      <div class="row"><span>Catchment schools, School District</span><span class="v">up to $0.224</span></div>
+    </div>
+    <p class="rise"><b>From then on,</b> TinyFish Monitor checks the licences page and the assessment page of a watched address twice a day. A new permit, a new violation, a sale or a changed assessment is recorded with what the page said before and after.</p>
+    <div class="ev ui rise" data-ui>
+      <div class="row"><span class="k">An alert reads like this</span><span class="k">example</span></div>
+      <div class="row"><span>New permit at 1234 Market St</span><span class="v">155 to 156 permits</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap nine" id="sources" aria-labelledby="nine">
+  <h2 id="nine" class="rise">Nine offices,<span>one sheet each</span></h2>
+  <table class="rise">
+    <thead><tr><th>Office</th><th>What it holds</th><th>Read by</th><th>Monitor</th></tr></thead>
+    <tbody>
+      <tr><td>Office of Property Assessment</td><td>Owner, building, assessed value, last sale</td><td>Fetch</td><td>Watched</td></tr>
+      <tr><td>Department of Planning and Development</td><td>Zoning district, overlays, pending bills, appeals</td><td>Fetch</td><td></td></tr>
+      <tr><td>Department of Licenses and Inspections</td><td>Recent permits, inspections, violations, appeals, licences</td><td>Fetch</td><td>Watched</td></tr>
+      <tr><td>Department of Records</td><td>Parcel, area, recorded deed documents</td><td>Fetch</td><td></td></tr>
+      <tr><td>Office of Property Assessment</td><td>Assessed value, year by year</td><td>Agent</td><td></td></tr>
+      <tr><td>Department of Revenue</td><td>Real estate tax balance</td><td>Agent</td><td></td></tr>
+      <tr><td>FEMA</td><td>Flood zone</td><td>Agent</td><td></td></tr>
+      <tr><td>School District of Philadelphia</td><td>Catchment schools</td><td>Agent</td><td></td></tr>
+      <tr><td>Department of Licenses and Inspections</td><td>Every permit and violation on file</td><td>Agent</td><td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="wrap" aria-labelledby="measured">
+  <div class="quiet">
+    <h2 id="measured" class="rise">Measured on 9 November</h2>
+    <dl>
+      <div class="rise"><dt>46 s</dt><dd>to resolve "1234 market st." and read its four free sheets from the live city atlas.</dd></div>
+      <div class="rise"><dt>155</dt><dd>permits on file at that address, with 99 inspections and 83 violations.</dd></div>
+      <div class="rise"><dt>$0.008</dt><dd>is what that dossier cost in TinyFish calls: four page screenshots. The reads were free.</dd></div>
+      <div class="rise"><dt>9</dt><dd>official sources for every address. Four are read at no cost.</dd></div>
+    </dl>
+  </div>
+  <div class="quiet-pic rise"><img src="../public/assets/plates/shot-tower.jpg" alt="The Sparks Shot Tower in an 1880 survey" style="object-position:28% 50%" loading="lazy"></div>
+</section>
+
+<section class="close" aria-label="Start">
+  <div class="trio">
+    <span><img src="../public/assets/plates/hosiery.jpg" alt="Plan of the Germantown Hosiery Mills, 1866" style="object-position:40% 45%" loading="lazy"></span>
+    <span><img src="../public/assets/plates/glen-echo.jpg" alt="Plan of the Glen Echo Mills, 1866" style="object-position:50% 50%" loading="lazy"></span>
+    <span><img src="../public/assets/plates/carriage.jpg" alt="Plan of a carriage works, 1866" style="object-position:50% 60%" loading="lazy"></span>
+  </div>
+  <div class="band">
+    <p class="big rise">Before you buy, build or renovate, <a href="#top">read what the city holds</a> on the address.</p>
+    <p class="note rise">Groundwork reports what the official pages say and marks what it could not read. It gives no valuation and no advice.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="ft a"><p>Every record carries its source link and the time it was read.</p><small>Not affiliated with the City of Philadelphia. MIT licence. Built by Hamdan Esmail for the TinyFish bounty.</small></div>
+  <div class="ft b"><ul><li><a href="#top">New dossier</a></li><li><a href="#sources">Sources</a></li><li><a href="#">Watchlist</a></li><li><a href="#">JSON API</a></li><li><a href="#">Source code</a></li></ul></div>
+  <div class="ft c"><span>Philadelphia</span><span class="num" id="clock">Eastern time</span></div>
+  <div class="ft d"><small>Pictures: Hexamer General Surveys of Philadelphia, 1866 to 1880, by Ernest Hexamer. Public domain, via Wikimedia Commons. Screenshots: phila.gov pages as read.</small><a href="#">All credits</a></div>
+  <div class="ft w"><span>Groundwork</span></div>
+  <a class="ft g" href="#top"><b>Draw a dossier</b><svg viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="4" aria-hidden="true"><path d="M10 62 60 12M24 12h36v36"/></svg></a>
+</footer>
+
+<script>
+(() => {
+  const seen = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); seen.unobserve(e.target); }
+  }, { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".rise,.shutter").forEach((el) => seen.observe(el));
+  const clock = document.getElementById("clock");
+  const tick = () => { clock.textContent = new Intl.DateTimeFormat("en-GB", { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit" }).format(new Date()); };
+  tick(); setInterval(tick, 30000);
+  document.querySelectorAll(".tries a").forEach((a) => a.addEventListener("click", (ev) => {
+    ev.preventDefault(); const box = document.getElementById("address"); box.value = a.textContent; box.focus();
+  }));
+})();
+</script>
+</body>
+</html>

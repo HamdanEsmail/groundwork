@@ -1,0 +1,4 @@
+{
+  "_note": "hand-built until a real run is recorded",
+  "catchment": [{ "level": "elementary", "name": "Example School", "address": "1 Example St", "distance_miles": "0.4" }]
+}
