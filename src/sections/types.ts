@@ -98,6 +98,8 @@ export interface PropertyData {
   mailing_address: string[];
   building_description: string | null;
   year_built: number | null;
+  /** True when the city gives the year as an estimate ("1920 (estimated)"). Absent otherwise. */
+  year_built_estimated?: boolean;
   improvement_area_sqft: number | null;
   assessed_value_usd: number | null;
   /** false for "does not have the homestead exemption", true for "has the homestead exemption", else null. */

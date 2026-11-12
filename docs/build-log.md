@@ -419,3 +419,41 @@ The suite stands at 617 tests.
 - **Spend on the live site:** 20 Agent runs, 170 steps, $2.72; 12 screenshots, $0.024; 6 first Monitor checks, $0.03. $2.77 in all.
 - **Money as money.** `/api/stats` printed `2.7199999999999998` for the Agent spend. The public figures are printed to four decimals.
 - `npm run check` is green: typecheck, 642 tests, `wrangler deploy --dry-run`.
+
+## A question about condominiums, and two faults it found, 12 November
+
+Another developer asked whether 3600 Market St comes back as one account per unit or rolled up under the building. Per unit: the city keeps no assessment record for that building, only for its 17 units. Answering him, I asked the live site the same thing and found two faults.
+
+- **The unit list was sometimes not read.** The first lookup offered one line, "3600 MARKET ST (17 condominium units)", as if it were an address to choose. The city's site had answered the Condominiums tab "unreachable", seconds after serving the property page for the same address, and that answer was final for me. I read the tab six times in a row: unreachable twice. Twelve reads of an ordinary property page and a permits tab: never. So the retry is where the fault is. When the property page has just said "condominium units", the tab is read again on "unreachable", and again when it comes back without its table, up to four reads in all.
+- **Only the first ten units could be named.** The city's list shows ten rows of the 17. A unit was matched against the rows I had read, so `"unit": "700"` answered "choose one" with ten units that did not include it. The atlas resolves a unit written after the address for every unit: "3600 MARKET ST Unit 700" is `3600 MARKET ST STE 700`, account 883076625. A named unit the list does not show is now asked that way. The atlas answers a unit it does not know with the building's own page, and at 1500 Market St that page has an account of its own, so the page is taken only when its heading is not the building's and carries the unit.
+- **The answer says what it holds.** "This building has 17 condominium units, and the city's list shows the first 10", with the form to write a unit in and a link to the city's own list. When the list cannot be read there is no address to choose: the line that was offered posted its own label back as an address.
+- **A visitor may draw ten dossiers a day**, up from three. Three is spent by one mistyped address and two tries. A public dossier costs under one cent (four screenshots at $0.002).
+- The fixtures for these tests are the pages as the atlas served them on 11 November.
+- `npm run check` is green: typecheck, 653 tests, `wrangler deploy --dry-run`.
+
+## An outside test of the live site, 12 November
+
+I gave a fresh session the site's address and a terminal, six lookups and one paid upgrade, and asked for a hard report. It spent $0.398. Every figure it could check against the city's open data matched: owner, value, sale, area, zoning, thirteen years of assessments to the dollar, permit counts. Its scores: first impression 8, the reports 6.5, honesty about gaps 5.5, the API 5.5.
+
+What it found and I fixed, tests first:
+
+- **A permits page for a row house was "could not be read".** The atlas served 2314 Brown St's page without its address heading, and with the sort buttons' words inside the table headings ("Date   Sort table by Date in descending order"), so the reader found no Date column. Table headings are now read without those words, and a permits page with no heading is read when its building table names the parcel. The fixture is the page as it came.
+- **"Built 2004" over a house the city dates "1920 (estimated)".** The estimated year was thrown away, and the timeline then called the year of the oldest deed "Built". An estimated year is kept and shown as the city writes it, also on reports stored before this. Only a year the city gives for the building is called "Built".
+- **A sheet that was searched and held nothing said "Read".** It now says "Nothing found", gives the page to check by hand, and is counted apart ("5 of 9, 2 searched and found nothing"). The JSON names such sheets in `nothing_found`. The home page's count of sheets read no longer includes them.
+- **The paid tax and schools searches found nothing for a condominium unit.** They typed "3600 MARKET ST STE 700" into forms that know streets. They now search the building's street, and the tax search is told to pick the unit by its account. Proved with one paid report of unit 700: the school finder returned its three catchment schools.
+- **A tax read that ran out of steps was stored as read, with a balance "not stated".** Found by that same proof run: the search form was reached and the steps ran out before a balance. A tax result with no balance that does not say "nothing found" is now a gap with its own sentence.
+- **A unit that does not exist got the plain "choose one" answer after 108 seconds.** The atlas had already answered that unit with the building's page, and I asked it again. It is asked once, the unit list is read at the building's own address, and the answer says "The city's atlas did not find unit 999 at 3600 MARKET ST". 28 seconds on the live site.
+- Smaller: a screenshot still on its way is no longer called "not captured"; "about 40 seconds" measured 24 to 108 and now says "usually under a minute, and up to two"; a copy of an earlier report says it is one; a unit's report says its permits and deeds sheets are kept by address; "It holds 2 units" became "The city's atlas lists 2 condominium units at this address"; the footer's JSON link works on a "which unit" page; `unit`, `outcome`, `nothing_found` and `admin_required` are on the About page.
+
+Found while checking its report, and fixed the same way: the note at the daily limit still said "Three dossiers a day"; a named unit is asked for again when the city answers "unreachable" (it did, for unit 800); the sentence on an unfinished tax read no longer promises a retry a visitor cannot start.
+
+What it found and I left:
+
+- "A failed sheet is kept for 24 hours" is not so: a report with a failed free sheet is never reused, and its test of that was a guess from the About page.
+- The seven units the city's own list does not show are still not listed. Any of them resolves when it is named.
+- The API answers 202 once the free sheets are read, and calls a "which unit" answer `failed`. Both are documented; `outcome` is now in the report's JSON too. No CORS headers.
+- The tax source link leads to the tax centre's front page: it has no address of its own for one property.
+
+The tax search for a condominium unit is not proven: two paid tries reached the form and stopped before a balance. It shows as a gap. The zoning, deeds and assessment readers still ask for the address heading; none of them was seen without it.
+
+`npm run check` is green: typecheck, 684 tests, `wrangler deploy --dry-run`.

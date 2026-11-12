@@ -1,8 +1,9 @@
 // Redirect notes are chosen from this list. A query value that is not a key is ignored.
+import { PUBLIC_DOSSIERS_PER_IP_PER_DAY } from "../core/limits";
 
 export const HOME_NOTES = {
   unusable: "Type a Philadelphia address or a 9-digit OPA account.",
-  limit: "Three dossiers a day can be drawn from here. That number has been reached.",
+  limit: `${PUBLIC_DOSSIERS_PER_IP_PER_DAY} dossiers a day can be drawn from here. That number has been reached.`,
   atlas: "The city atlas did not answer. Try again, or look the address up by hand.",
 } as const;
 

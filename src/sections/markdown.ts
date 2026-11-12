@@ -92,8 +92,17 @@ export function splitSections(markdown: string): MdPage {
   return { preamble, sections };
 }
 
+/**
+ * A column's name without the words of its sort button. The atlas sometimes serves a table's
+ * headings as "Date   Sort table by Date in descending order" (2314 Brown St, 12 November 2026).
+ */
+const SORT_BUTTON = /\s+Sort table by .* in (?:ascending|descending) order$/i;
+function columnName(cell: string): string {
+  return cell.replace(SORT_BUTTON, "").trim();
+}
+
 function toTable(lines: string[][]): MdTable {
-  if (lines.length >= 2 && isSeparatorRow(lines[1]!)) return { columns: lines[0]!, rows: lines.slice(2) };
+  if (lines.length >= 2 && isSeparatorRow(lines[1]!)) return { columns: lines[0]!.map(columnName), rows: lines.slice(2) };
   return { columns: [], rows: lines };
 }
 

@@ -21,6 +21,20 @@ function homestead(raw: string | null): boolean | null {
   return null;
 }
 
+/** A year as the city writes it: four digits, with "(estimated)" after it for many older houses. */
+const ESTIMATED_YEAR = /^(\d{4})(\s*\(estimated\))?$/i;
+
+/**
+ * The year a building went up, and whether the city calls it an estimate. Read from the parsed
+ * year, or from the city's own text for a report stored before estimated years were kept.
+ */
+export function builtYear(d: Pick<PropertyData, "year_built" | "year_built_estimated" | "raw"> | null | undefined): { year: number; estimated: boolean } | null {
+  if (!d) return null;
+  if (d.year_built != null) return { year: d.year_built, estimated: d.year_built_estimated === true };
+  const m = ESTIMATED_YEAR.exec(d.raw?.year_built?.trim() ?? "");
+  return m !== null && m[2] !== undefined && Number(m[1]) > 0 ? { year: Number(m[1]), estimated: true } : null;
+}
+
 function readProperty(markdown: string): PropertyData {
   const kv = pageKeyValues(splitSections(markdown));
   const get = (key: string) => valueOf(kv, key);
@@ -28,7 +42,9 @@ function readProperty(markdown: string): PropertyData {
   const account = orNull(get("OPA Account #"));
   if (pageTitle(markdown) === null || account === null) throw new UnrecognisedPage("property: no H1 address or OPA Account #");
   const yearRaw = get("Year Built");
-  const year = yearRaw !== null && /^\d{4}$/.test(yearRaw.trim()) && Number(yearRaw) > 0 ? Number(yearRaw) : null;
+  const yearText = ESTIMATED_YEAR.exec(yearRaw?.trim() ?? "");
+  const year = yearText !== null && Number(yearText[1]) > 0 ? Number(yearText[1]) : null;
+  const estimated = year !== null && yearText?.[2] !== undefined;
   const assessedRaw = stripLinkText(get("Assessed Value"), /\s*View tax balance & pay bill\s*$/i);
   const homesteadRaw = stripLinkText(get("Homestead Exemption"), /\s*Learn about property tax programs\s*$/i);
   const units = /There (?:are|is) (\d+) condominium units?\b/i.exec(markdown);
@@ -49,6 +65,7 @@ function readProperty(markdown: string): PropertyData {
     mailing_address: splitLines(raw.mailing_address),
     building_description: orNull(get("Building Description")),
     year_built: year,
+    ...(estimated ? { year_built_estimated: true } : {}),
     improvement_area_sqft: measure(raw.improvement_area_sqft, "sq ft"),
     assessed_value_usd: usd(raw.assessed_value_usd),
     homestead: homestead(homesteadRaw),

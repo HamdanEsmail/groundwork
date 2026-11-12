@@ -1,4 +1,5 @@
 // Shared validation and formatting for Agent outputs.
+import { normalizeAddress } from "../address/normalize";
 import { usDate } from "./markdown";
 import type { AgentSectionData } from "./types";
 
@@ -64,4 +65,13 @@ export function classify(data: AgentSectionData, empty: boolean): { status: "ok"
 export function schema(properties: Record<string, object>): object {
   return { type: "object", properties: { blocked: { type: "boolean" }, no_results: { type: "boolean" },
     error_message: { type: "string", nullable: true }, ...properties } };
+}
+
+/**
+ * The street of an address and its unit, when it has one. The school finder and the tax centre
+ * search by street: "3600 MARKET ST STE 700" finds nothing there, "3600 MARKET ST" does.
+ */
+export function streetAndUnit(address: string): { street: string; unit: string | null } {
+  const { street, unit } = normalizeAddress(address);
+  return { street: street || address, unit };
 }

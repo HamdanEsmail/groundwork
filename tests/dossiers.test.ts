@@ -696,6 +696,68 @@ describe("resolution failures and input", () => {
     expect(await dossierCount()).toBe(1);
   });
 
+  // 3600 Market St as the live atlas holds it: 17 condominium units, the first ten on its list.
+  it("answers a condominium building with its units, how many the city listed, and the city's own list", async () => {
+    mockAtlas({ [tabUrl("3600 Market St", "property")]: fx("property-3600-market.md"), [tabUrl("3600 Market St", "condos")]: fx("condos-3600-market.md") });
+    const res = await create({ address: "3600 Market St" });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: "failed",
+      outcome: "ambiguous",
+      manual_url: "https://atlas.phila.gov/3600%20Market%20St/condos",
+      how_to_resolve: 'This building has 17 condominium units, and the city\'s list shows the first 10. Choose one, or add the unit to the address in the form "3600 MARKET ST Unit N".',
+    });
+    expect(res.body.candidates).toHaveLength(10);
+    expect(res.body.candidates[0]).toEqual({ address: "3600 MARKET ST # 100", url: "https://atlas.phila.gov/883076615/property" });
+  });
+
+  it("offers no address to choose and says why when the city's unit list could not be read", async () => {
+    mockAtlas({ [tabUrl("3600 Market St", "property")]: fx("property-3600-market.md"), [tabUrl("3600 Market St", "condos")]: EMPTY });
+    const made = await createDossier(env, { address: "3600 Market St" }, { admin: false, ipHash: "h-condo" }, { sleep: async () => {} });
+    expect(made).toMatchObject({
+      status: "failed",
+      outcome: "ambiguous",
+      detail: {
+        candidates: [],
+        manual_url: "https://atlas.phila.gov/3600%20Market%20St/condos",
+        how_to_resolve: 'This address is a building of 17 condominium units, and the city\'s list of them could not be read just now. Add the unit to the address in the form "3600 MARKET ST Unit N", or open the city\'s list.',
+      },
+    });
+  });
+
+  it("says only to choose when the city's list shows every unit", async () => {
+    mockAtlas({ [tabUrl("1500 Market St", "property")]: fx("property-1500-market.md"), [tabUrl("1500 Market St", "condos")]: fx("condos-1500-market.md"), [tabUrl("1500 MARKET ST Unit 4B", "property")]: fx("property-1500-market.md") });
+    const res = await create({ address: "1500 Market St", unit: "4B" });
+    expect(res.body).toMatchObject({ outcome: "ambiguous", how_to_resolve: "The city's atlas did not find unit 4B at 1500 MARKET ST. This building has 2 condominium units. Choose the one you mean and try again." });
+    expect(res.body.candidates).toHaveLength(2);
+  });
+
+  it("says so when the atlas does not find the unit that was typed", async () => {
+    mockAtlas({ [tabUrl("3600 Market St Unit 999", "property")]: fx("property-3600-market.md"), [tabUrl("3600 MARKET ST", "condos")]: fx("condos-3600-market.md") });
+    const res = await create({ address: "3600 Market St Unit 999" });
+    expect(res.body).toMatchObject({
+      outcome: "ambiguous",
+      manual_url: "https://atlas.phila.gov/3600%20MARKET%20ST/condos",
+      how_to_resolve: 'The city\'s atlas did not find unit 999 at 3600 MARKET ST. This building has 17 condominium units, and the city\'s list shows the first 10. Choose one, or add the unit to the address in the form "3600 MARKET ST Unit N".',
+    });
+  });
+
+  it("builds the dossier of a named unit that the city's list does not show", async () => {
+    const unit = "3600 MARKET ST STE 700";
+    mockAtlas({
+      [tabUrl("3600 Market St", "property")]: fx("property-3600-market.md"),
+      [tabUrl("3600 Market St", "condos")]: fx("condos-3600-market.md"),
+      [tabUrl("3600 MARKET ST Unit 700", "property")]: fx("property-3600-market-ste-700.md"),
+      [tabUrl(unit, "zoning")]: fx("zoning-1234-market.md"),
+      [tabUrl(unit, "li")]: fx("li-1234-market.md"),
+      [tabUrl(unit, "deeds")]: fx("deeds-1234-market.md"),
+    });
+    const res = await create({ address: "3600 Market St", unit: "700" });
+    expect(res.body).toMatchObject({ outcome: "resolved" });
+    const doc = await getDoc(res.body.dossier_id);
+    expect(doc.body.address).toMatchObject({ resolved: "3600 MARKET ST STE 700, PHILADELPHIA, PA 19104-2650", opa_account: "883076625" });
+  });
+
   it("still returns the dossier when the evidence Workflow cannot be created", async () => {
     workflowCreate.mockRejectedValueOnce(new Error("workflows down"));
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -739,7 +801,7 @@ describe("resolution failures and input", () => {
 // --- public cap and cache --------------------------------------------------------------------------------
 
 describe("public cap and the 24-hour cache", () => {
-  it("refuses the fourth public create from one IP with 429, counting no_match and cache hits", async () => {
+  it("refuses the eleventh public create from one IP with 429, counting no_match and cache hits", async () => {
     mockAtlas({
       ...market(),
       [tabUrl("99999 Nowhere St", "property")]: fx("property-no-record.md"),
@@ -749,10 +811,12 @@ describe("public cap and the 24-hour cache", () => {
     expect((await create({ address: "1234 Market St" }, { ip })).status).toBe(202);
     expect((await create({ address: "1234 Market St" }, { ip })).body.cached).toBe(true);
     expect((await create({ address: "99999 Nowhere St" }, { ip })).status).toBe(200);
+    // the rest of the day's ten, all answered from the cache
+    for (let n = 4; n <= 10; n++) expect((await create({ address: "1234 Market St" }, { ip })).body.cached).toBe(true);
     const before = fetchMock.calls.length;
-    const fourth = await create({ address: "1234 Market St" }, { ip });
-    expect(fourth.status).toBe(429);
-    expect(fourth.body).toEqual({ error: "rate_limited", limit: 3 });
+    const eleventh = await create({ address: "1234 Market St" }, { ip });
+    expect(eleventh.status).toBe(429);
+    expect(eleventh.body).toEqual({ error: "rate_limited", limit: 10 });
     expect(fetchMock.calls.length).toBe(before);
     // another visitor is not affected; the admin has no cap
     expect((await create({ address: "1234 Market St" }, { ip: "198.51.100.5" })).status).toBe(202);

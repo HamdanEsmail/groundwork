@@ -53,7 +53,17 @@ export type ResolveResult =
       variants_tried: string[];
     }
   | { outcome: "no_match"; variants_tried: string[]; manual_url: string }
-  | { outcome: "ambiguous"; candidates: { address: string; url: string }[] };
+  | { outcome: "ambiguous"; candidates: { address: string; url: string }[]; units?: UnitsListed };
+
+/** For a building whose units are offered to choose from: how many it has, and how many of them the city's list showed. */
+export interface UnitsListed {
+  building: string;
+  count: number;
+  listed: number;
+  list_url: string;
+  /** The unit that was asked for, when the atlas answered it with the building's own page. */
+  not_found?: string;
+}
 
 const NO_RECORD = /no property assessment record/i;
 
@@ -64,21 +74,46 @@ function readProperty(text: string): { h1: string; opa: string } | null {
   return h1 && opa ? { h1, opa } : null;
 }
 
+const CONDOMINIUM_UNITS = /There are (\d+) condominium units/;
+
 /** N from "There are N condominium units" or "There are N active parcels" when N > 1. */
 function unitCount(text: string): number | null {
-  for (const pattern of [/There are (\d+) condominium units/, /There are (\d+) active parcels/]) {
+  for (const pattern of [CONDOMINIUM_UNITS, /There are (\d+) active parcels/]) {
     const n = Number(pattern.exec(text)?.[1]);
     if (n > 1) return n;
   }
   return null;
 }
 
-/** The condominium parent's units: the count from /property, the list from the atlas condos tab. A failed read, or a page with no unit table, leaves `list` null; it never fails the resolution. */
-async function readUnits(env: Env, address: string, count: number, opts: { sleep?: (ms: number) => Promise<void> }): Promise<Units> {
-  const tab = await fetchAtlas(env, address, "condos", opts);
+/**
+ * The condominium parent's units: the count from /property, the list from the atlas condos tab.
+ * A failed read, or a page with no unit table, leaves `list` null; it never fails the resolution.
+ * `propertyText` is the /property page that gave the count. When it says "condominium units",
+ * the tab must hold a unit table: the atlas sometimes answers that tab "unreachable", or serves
+ * it before the table is in it, a moment after serving /property for the same address. Both are
+ * read again before the list is given up.
+ */
+async function readUnits(env: Env, address: string, count: number, propertyText: string, opts: { sleep?: (ms: number) => Promise<void> }): Promise<Units> {
+  const expectsTable = CONDOMINIUM_UNITS.test(propertyText);
+  const tab = await fetchAtlas(env, address, "condos", expectsTable
+    ? { ...opts, retryUnreachable: true, holds: (text) => parseCondoUnits(text).length > 0 }
+    : opts);
   const list = tab.ok ? parseCondoUnits(tab.text) : [];
   return { count, list: list.length > 0 ? list : null, list_url: tab.url };
 }
+
+/** The answer that offers a building's units to choose from. With no list read, there is no address to offer. */
+function chooseUnit(building: string, units: Units, fallbackUrl: string, notFound: string | null = null): ResolveResult {
+  const list = units.list ?? [];
+  return {
+    outcome: "ambiguous",
+    candidates: list.map((u) => ({ address: u.address, url: atlasUrl(u.opa_account, "property") })),
+    units: { building, count: units.count, listed: list.length, list_url: units.list_url ?? fallbackUrl, ...(notFound ? { not_found: notFound } : {}) },
+  };
+}
+
+/** How asking the atlas for one unit ended: the unit's own record, "the atlas knows no such unit", or null when the read says nothing. */
+type NamedUnit = ResolveResult | "not_found" | null;
 
 export async function resolveAddress(
   env: Env,
@@ -118,18 +153,19 @@ export async function resolveAddress(
       const building = /^# (.+)$/m.exec(res.text)?.[1]?.trim();
       const unitsHere = unitCount(res.text);
       if (!byAccount && building && unitsHere !== null) {
-        const units = await readUnits(env, variant, unitsHere, opts);
+        // When the address that was asked carries a unit, the list is read at the building's own address.
+        const typedUnit = normalizeAddress(variant).unit;
+        const listAt = typedUnit ? building : variant;
+        const units = await readUnits(env, listAt, unitsHere, res.text, opts);
         const named = (input.unit?.trim() || (input.address ? normalizeAddress(input.address).unit : null)) ?? null;
-        if (units.list === null) {
-          return { outcome: "ambiguous", candidates: [{ address: `${building} (${unitsHere} condominium units)`,
-            url: units.list_url ?? atlasUrl(variant, "condos") }] };
-        }
-        const matches = named ? units.list.filter((u) => unitMatches(named, u)) : [];
+        const matches = named && units.list ? units.list.filter((u) => unitMatches(named, u)) : [];
         if (matches.length === 1) return resolveUnitParcel(env, matches[0]!, tried, input.address ?? "", opts);
-        return {
-          outcome: "ambiguous",
-          candidates: units.list.map((u) => ({ address: u.address, url: atlasUrl(u.opa_account, "property") })),
-        };
+        // The city's list shows only its first rows, and may not have been read at all, so the unit is
+        // asked of the atlas itself: unless this very page is its answer for that unit.
+        const answered = named !== null && typedUnit !== null && unitNeedle(typedUnit) === unitNeedle(named);
+        const direct: NamedUnit = named === null ? null : answered ? "not_found" : await readNamedUnit(env, building, named, tried, input.address ?? "", opts);
+        if (direct !== null && direct !== "not_found") return direct;
+        return chooseUnit(building, units, atlasUrl(listAt, "condos"), direct === "not_found" && named ? unitNeedle(named) : null);
       }
       throw new AtlasUnavailableError("unrecognized_page", res.url);
     }
@@ -137,18 +173,21 @@ export async function resolveAddress(
     if (byAccount && page.opa !== account) continue;
 
     const count = unitCount(res.text);
-    const units = count !== null ? await readUnits(env, byAccount ? page.h1 : variant, count, opts) : null;
+    const typedUnit = byAccount ? null : normalizeAddress(variant).unit;
+    const listAt = byAccount || typedUnit ? page.h1 : variant;
+    const units = count !== null ? await readUnits(env, listAt, count, res.text, opts) : null;
     const wanted = (input.unit?.trim() || (input.address ? normalizeAddress(input.address).unit : null)) ?? null;
     // A supplied unit picks that unit's account when the building lists units; a building with no list stays the parent.
-    if (!byAccount && wanted && units?.list && units.list.length > 0) {
-      const matches = units.list.filter((u) => unitMatches(wanted, u));
+    if (!byAccount && wanted && units !== null) {
+      const matches = (units.list ?? []).filter((u) => unitMatches(wanted, u));
       if (matches.length === 1) {
         return resolveUnitParcel(env, matches[0]!, tried, input.address ?? "", opts);
       }
-      return {
-        outcome: "ambiguous",
-        candidates: units.list.map((u) => ({ address: u.address, url: atlasUrl(u.opa_account, "property") })),
-      };
+      const answered = typedUnit !== null && unitNeedle(typedUnit) === unitNeedle(wanted);
+      const direct: NamedUnit = answered ? "not_found" : await readNamedUnit(env, page.h1, wanted, tried, input.address ?? "", opts);
+      if (direct !== null && direct !== "not_found") return direct;
+      // A building whose list could not be read stays the parent; one that lists its units offers them.
+      if (units.list !== null) return chooseUnit(page.h1, units, atlasUrl(listAt, "condos"), direct === "not_found" ? unitNeedle(wanted) : null);
     }
     return {
       outcome: "resolved",
@@ -170,13 +209,56 @@ function unitKey(value: string): string {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
+/** The unit as asked for, without the word in front of it: "Suite 700" and "#700" are both 700. */
+function unitNeedle(want: string): string {
+  return unitKey(want.replace(/^(?:APT|APARTMENT|UNIT|STE|SUITE)\b/i, ""));
+}
+
+/**
+ * Asks the atlas for the unit itself. It resolves "<building> Unit <n>" for every unit of a
+ * building, including the ones its list does not show. It answers a unit it does not know with
+ * the building's own page, which can carry an account of its own, so the page is taken only
+ * when its heading is not the building's and carries the unit. "not_found" when the atlas
+ * answered with the building's page: it knows no such unit. Null when the read failed or says
+ * nothing either way; the caller then offers the units to choose from.
+ */
+async function readNamedUnit(
+  env: Env,
+  building: string,
+  named: string,
+  variantsTried: string[],
+  searched: string,
+  opts: { sleep?: (ms: number) => Promise<void> },
+): Promise<NamedUnit> {
+  const needle = unitNeedle(named);
+  // The house number alone names the building, not a unit.
+  if (!needle || needle === unitKey(building.split(/\s+/)[0] ?? "")) return null;
+  const address = `${building} Unit ${needle}`;
+  // The atlas has just served the building at this address, so "unreachable" here is a passing failure.
+  const res = await fetchAtlas(env, address, "property", { ...opts, retryUnreachable: true });
+  if (!res.ok) return null;
+  const page = readProperty(res.text);
+  const heading = page?.h1 ?? /^# (.+)$/m.exec(res.text)?.[1]?.trim() ?? null;
+  if (heading !== null && unitKey(heading) === unitKey(building)) return "not_found";
+  if (page === null || !unitMatches(named, { address: page.h1, opa_account: page.opa })) return null;
+  return {
+    outcome: "resolved",
+    resolution: searched ? compareResolved(searched, page.h1) : "exact",
+    address_resolved: page.h1,
+    opa_account: page.opa,
+    units: null,
+    property_text: res.text,
+    variants_tried: [...variantsTried, address],
+  };
+}
+
 /**
  * True when this list row is the supplied unit number (case and punctuation ignored). The unit must
  * equal a whole word of the row: "4" is not unit "14", and the house number alone names no unit
  * unless it carries a letter ("1500S").
  */
 function unitMatches(want: string, unit: CondoUnit): boolean {
-  const needle = unitKey(want.replace(/^(?:APT|APARTMENT|UNIT|STE|SUITE)\b/i, ""));
+  const needle = unitNeedle(want);
   if (!needle) return false;
   const words = unit.address.toUpperCase().split(/[^A-Z0-9]+/).filter((w) => w !== "");
   if (words.slice(1).includes(needle)) return true;

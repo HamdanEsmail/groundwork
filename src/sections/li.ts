@@ -103,13 +103,15 @@ function building(page: MdPage): Building | null {
 
 function readLi(markdown: string): LicensesInspectionsData {
   const page = splitSections(markdown);
-  const street = pageTitle(markdown);
-  // The anchors of an /li page: the H1 address and counted Permits and Violations headers (a count of
-  // 0 is a count). The other lists may be missing: a property without inspections has no such header.
-  if (street === null || findSection(page, "Permits")?.count == null || findSection(page, "Violations")?.count == null) {
-    throw new UnrecognisedPage("li: no H1 address, or no counted Permits and Violations headers");
-  }
   const selected = building(page);
+  // The anchors of an /li page: counted Permits and Violations headers (a count of 0 is a count) and
+  // the address. The atlas sometimes serves this tab without its H1 (2314 Brown St, 12 November
+  // 2026); the selected building's parcel address then says which address the page is for. The
+  // other lists may be missing: a property without inspections has no such header.
+  const street = pageTitle(markdown) ?? selected?.parcel_address ?? null;
+  if (street === null || findSection(page, "Permits")?.count == null || findSection(page, "Violations")?.count == null) {
+    throw new UnrecognisedPage("li: no address, or no counted Permits and Violations headers");
+  }
   const sentence = /There (?:is|are) (\d+) buildings? at this address/i.exec(markdown);
   const violations = list(page, "Violations", RECORD_COLUMNS, recordRow);
   return {

@@ -27,6 +27,8 @@ export function Layout(props: {
   refreshSeconds?: number;
   pageUrl: string;
   base: string;
+  /** Where the footer's "This dossier as JSON" leads. Without it the link points at the header's JSON button. */
+  jsonHref?: string;
   children: Child;
 }) {
   const root = props.base.replace(/\/$/, "");
@@ -62,7 +64,7 @@ export function Layout(props: {
         <body>
           {bar ? <Bar /> : null}
           {props.children}
-          {props.dossier ? <DossierFooter /> : <SiteFooter home={!props.inner} />}
+          {props.dossier ? <DossierFooter jsonHref={props.jsonHref} /> : <SiteFooter home={!props.inner} />}
         </body>
       </html>
     </>
@@ -144,7 +146,7 @@ function SiteFooter(props: { home: boolean }) {
   );
 }
 
-function DossierFooter() {
+function DossierFooter(props: { jsonHref?: string }) {
   return (
     <footer>
       <div class="ft a">
@@ -165,7 +167,7 @@ function DossierFooter() {
             <a href="/watchlist">Watchlist</a>
           </li>
           <li>
-            <a href="#json">This dossier as JSON</a>
+            <a href={props.jsonHref ?? "#json"}>This dossier as JSON</a>
           </li>
         </ul>
       </div>

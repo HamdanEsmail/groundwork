@@ -708,6 +708,7 @@ describe("resolveAddress", () => {
         { address: "3600 MARKET ST # 400", url: atlasUrl("883076685") },
         { address: "3600 MARKET ST STE 201", url: atlasUrl("883076625") },
       ],
+      units: { building: "3600 MARKET ST", count: 3, listed: 3, list_url: atlasUrl("3600 Market St", "condos") },
     });
   });
 
@@ -722,11 +723,90 @@ describe("resolveAddress", () => {
     });
   });
 
-  it("points at the atlas's own unit list when that list cannot be read", async () => {
+  it("offers no address to choose, and points at the city's own list, when that list cannot be read", async () => {
     mockAtlas({ [atlasUrl("3600 Market St")]: BUILDING, [atlasUrl("3600 Market St", "condos")]: EMPTY });
     expect(await resolveAddress(env, { address: "3600 Market St" }, { sleep })).toEqual({
       outcome: "ambiguous",
-      candidates: [{ address: "3600 MARKET ST (3 condominium units)", url: "https://atlas.phila.gov/3600%20Market%20St/condos" }],
+      candidates: [],
+      units: { building: "3600 MARKET ST", count: 3, listed: 0, list_url: "https://atlas.phila.gov/3600%20Market%20St/condos" },
+    });
+  });
+
+  // What the live atlas really holds for 3600 Market St (read 11 November 2026): 17 units, of
+  // which its list shows the first ten. STE 700 is one of the seven it does not show.
+  const REAL = { [atlasUrl("3600 Market St")]: fx("property-3600-market.md"), [atlasUrl("3600 Market St", "condos")]: fx("condos-3600-market.md") };
+
+  it("says how many units the building has when the city's list shows only some of them", async () => {
+    mockAtlas(REAL);
+    const res = await resolveAddress(env, { address: "3600 Market St" });
+    expect(res).toMatchObject({ outcome: "ambiguous", units: { building: "3600 MARKET ST", count: 17, listed: 10 } });
+    expect(res.outcome === "ambiguous" && res.candidates).toHaveLength(10);
+  });
+
+  it("resolves a named unit the city's list does not show, by asking the atlas for the unit itself", async () => {
+    mockAtlas({ ...REAL, [atlasUrl("3600 MARKET ST Unit 700")]: fx("property-3600-market-ste-700.md") });
+    expect(await resolveAddress(env, { address: "3600 Market St", unit: "Suite 700" })).toMatchObject({
+      outcome: "resolved", address_resolved: "3600 MARKET ST STE 700", opa_account: "883076625", units: null,
+    });
+    expect(requested()).toEqual([atlasUrl("3600 Market St"), atlasUrl("3600 Market St", "condos"), atlasUrl("3600 MARKET ST Unit 700")]);
+  });
+
+  it("does not take the building's own page for a unit that does not exist", async () => {
+    // The atlas answers an unknown unit with the building's page.
+    mockAtlas({ ...REAL, [atlasUrl("3600 MARKET ST Unit 500")]: fx("property-3600-market.md") });
+    const res = await resolveAddress(env, { address: "3600 Market St", unit: "500" });
+    expect(res).toMatchObject({ outcome: "ambiguous", units: { count: 17, listed: 10, not_found: "500" } });
+  });
+
+  it("says the atlas did not find a unit typed in the address, without asking for it twice", async () => {
+    // "3600 Market St Unit 999" is answered with the building's page: the atlas knows no such unit.
+    mockAtlas({ [atlasUrl("3600 Market St Unit 999")]: fx("property-3600-market.md"), [atlasUrl("3600 MARKET ST", "condos")]: fx("condos-3600-market.md") });
+    const res = await resolveAddress(env, { address: "3600 Market St Unit 999" });
+    expect(res).toMatchObject({
+      outcome: "ambiguous",
+      units: { building: "3600 MARKET ST", count: 17, listed: 10, not_found: "999", list_url: atlasUrl("3600 MARKET ST", "condos") },
+    });
+    // The list is read at the building's own address, and the unit is not asked for a second time.
+    expect(requested()).toEqual([atlasUrl("3600 Market St Unit 999"), atlasUrl("3600 MARKET ST", "condos")]);
+  });
+
+  it("answers with the units when the read of the named unit fails", async () => {
+    mockAtlas({ ...REAL, [atlasUrl("3600 MARKET ST Unit 700")]: HTTP_500 });
+    const res = await resolveAddress(env, { address: "3600 Market St", unit: "700" }, { sleep });
+    expect(res).toMatchObject({ outcome: "ambiguous", units: { listed: 10 } });
+    // A read that failed says nothing about whether the unit exists.
+    expect(res.outcome === "ambiguous" && res.units?.not_found).toBeUndefined();
+  });
+
+  it("reads the unit list again when the city's site answers unreachable", async () => {
+    mockAtlas({ [atlasUrl("3600 Market St")]: fx("property-3600-market.md"), [atlasUrl("3600 Market St", "condos")]: [UNREACHABLE, fx("condos-3600-market.md")] });
+    const res = await resolveAddress(env, { address: "3600 Market St" }, { sleep });
+    expect(res.outcome === "ambiguous" && res.candidates).toHaveLength(10);
+    expect(sleeps).toEqual([FETCH_RETRY_DELAY_MS]);
+  });
+
+  it("reads the unit list again when the page comes back without its table", async () => {
+    const noTable = "# 3600 MARKET ST\n\nPHILADELPHIA, PA 19104-3284\n\nCondominium units at your search address, as recorded for property assessment purposes.\n";
+    mockAtlas({ [atlasUrl("3600 Market St")]: fx("property-3600-market.md"), [atlasUrl("3600 Market St", "condos")]: [noTable, fx("condos-3600-market.md")] });
+    const res = await resolveAddress(env, { address: "3600 Market St" }, { sleep });
+    expect(res.outcome === "ambiguous" && res.candidates).toHaveLength(10);
+  });
+
+  it("resolves a named unit even when the unit list cannot be read", async () => {
+    mockAtlas({
+      [atlasUrl("3600 Market St")]: fx("property-3600-market.md"),
+      [atlasUrl("3600 Market St", "condos")]: UNREACHABLE,
+      [atlasUrl("3600 MARKET ST Unit 700")]: fx("property-3600-market-ste-700.md"),
+    });
+    expect(await resolveAddress(env, { address: "3600 Market St", unit: "700" }, { sleep })).toMatchObject({ outcome: "resolved", opa_account: "883076625" });
+  });
+
+  it("asks for a named unit again when the city's site answers unreachable", async () => {
+    // Seen on 12 November: the atlas answered "unreachable" for unit 800 a moment after serving the building.
+    const unit800 = fx("property-3600-market-ste-700.md").replaceAll("STE 700", "STE 800");
+    mockAtlas({ ...REAL, [atlasUrl("3600 MARKET ST Unit 800")]: [UNREACHABLE, unit800] });
+    expect(await resolveAddress(env, { address: "3600 Market St", unit: "800" }, { sleep })).toMatchObject({
+      outcome: "resolved", address_resolved: "3600 MARKET ST STE 800",
     });
   });
 
@@ -734,6 +814,8 @@ describe("resolveAddress", () => {
     mockAtlas({
       [atlasUrl("1500 Market St")]: fx("property-1500-market.md"),
       [atlasUrl("1500 Market St", "condos")]: fx("condos-1500-market.md"),
+      // The atlas answers a unit it does not know with the building's page, which has an account of its own.
+      [atlasUrl("1500 MARKET ST Unit 4B")]: fx("property-1500-market.md"),
     });
     expect(await resolveAddress(env, { address: "1500 Market St", unit: "4B" })).toEqual({
       outcome: "ambiguous",
@@ -741,6 +823,7 @@ describe("resolveAddress", () => {
         { address: "1500-42 MARKET ST", url: atlasUrl("883320000") },
         { address: "1500S MARKET ST", url: atlasUrl("875100060") },
       ],
+      units: { building: "1500 MARKET ST", count: 2, listed: 2, list_url: atlasUrl("1500 Market St", "condos"), not_found: "4B" },
     });
   });
 
@@ -750,6 +833,7 @@ describe("resolveAddress", () => {
       mockAtlas({
         [atlasUrl("1500 Market St")]: fx("property-1500-market.md"),
         [atlasUrl("1500 Market St", "condos")]: fx("condos-1500-market.md"),
+        [atlasUrl("1500 MARKET ST Unit 2")]: fx("property-1500-market.md"),
       });
       expect(await resolveAddress(env, { address: "1500 Market St", unit })).toMatchObject({ outcome: "ambiguous" });
     }

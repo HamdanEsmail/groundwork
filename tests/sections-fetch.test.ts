@@ -332,7 +332,9 @@ describe("parse returns null for a page that is not a read of its tab", () => {
     expect(readZoning(fx("zoning-1234-market.md").replace("**Base District**", "**District**"))).toBeNull();
     expect(readDeeds(fx("deeds-1234-market.md").replace("## Parcel Details", "## Parcel Info"))).toBeNull();
     expect(readLi(fx("li-1234-market.md").replace("## Permits (155)", "## Permits"))).toBeNull();
-    expect(readLi(fx("li-1234-market.md").replace("# 1234 MARKET ST\n", ""))).toBeNull();
+    // Without its heading the page is still read when the building table names the parcel; without both it is not.
+    expect(readLi(fx("li-1234-market.md").replace("# 1234 MARKET ST\n", ""))).not.toBeNull();
+    expect(readLi(fx("li-1234-market.md").replace("# 1234 MARKET ST\n", "").replace(/\| Parcel Address \|.*\n/, ""))).toBeNull();
   });
 });
 

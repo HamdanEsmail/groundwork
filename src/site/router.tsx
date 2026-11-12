@@ -83,7 +83,7 @@ async function demoLinks(db: D1Database): Promise<{ label: string; href: string 
 
 async function homeStats(db: D1Database): Promise<{ dossiers: number; sheets: number; gaps: number; spend: number }> {
   const dossiers = (await db.prepare("SELECT COUNT(*) AS n FROM dossiers").first<{ n: number }>())?.n ?? 0;
-  const sheets = (await db.prepare("SELECT COUNT(*) AS n FROM sections WHERE status IN ('ok', 'empty')").first<{ n: number }>())?.n ?? 0;
+  const sheets = (await db.prepare("SELECT COUNT(*) AS n FROM sections WHERE status = 'ok'").first<{ n: number }>())?.n ?? 0;
   const gaps =
     (await db.prepare("SELECT COUNT(*) AS n FROM sections WHERE status IN ('unavailable', 'error')").first<{ n: number }>())?.n ?? 0;
   return { dossiers, sheets, gaps, spend: await totalSpend(db) };

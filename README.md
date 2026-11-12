@@ -43,7 +43,7 @@ The same table is on the site's About page.
 
 | Route | What it does |
 |---|---|
-| `POST /api/dossiers` | Starts a dossier from `{"address": "1234 Market St"}` or `{"opa_account": "883309050"}`. 202 with its id and report link. An address the city cannot place answers 200 with `status: "failed"` and how to resolve it; a condominium building answers with its units to choose from. |
+| `POST /api/dossiers` | Starts a dossier from `{"address": "1234 Market St"}` or `{"opa_account": "883309050"}`. 202 with its id and report link. An address the city cannot place answers 200 with `status: "failed"` and how to resolve it; a condominium building answers with its units to choose from. A unit goes in the address (`3600 Market St Unit 700`) or beside it as `"unit": "700"`. |
 | `GET /api/dossiers/:id` | One dossier, every sheet with its source link. `gaps` names the sheets asked for and not read; each carries `reason` and `reason_text`. |
 | `POST /api/dossiers/:id/upgrade` | Reads the four remaining sheets of a free dossier. Once a day from one place. |
 | `POST /api/dossiers/:id/retry` | Admin: reads again the sheets that ended in error, or only those named in `{"sections": [...]}`. |

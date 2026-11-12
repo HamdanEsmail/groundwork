@@ -2,7 +2,7 @@
 import { AGENT_SECTION_MAX_USD } from "../core/limits";
 import type { Dossier, StoredSection } from "../db/types";
 import { DEEP_SECTION_ID, getSection, manualUrlFor, SECTIONS, STANDARD_AGENT_SECTION_IDS } from "../sections/index";
-import { gapReason } from "./reasons";
+import { gapReason, NOTHING_FOUND_TEXT } from "./reasons";
 
 const COST_PRECISION = 1000;
 
@@ -23,6 +23,8 @@ export function toDossierDocument(dossier: Dossier, rows: StoredSection[], baseU
         // The same sentence the report page prints; `reason` stays the stored code for programs.
         reason_text: resolved ? gapReason(row?.error) : "The address was not resolved, so nothing was read.",
         manual_url: resolved ? manualUrlFor(adapter, ctx) : null } : {}),
+      // A sheet that was searched and held nothing says so, with the page to check it by hand.
+      ...(status === "empty" ? { reason_text: NOTHING_FOUND_TEXT, manual_url: resolved ? manualUrlFor(adapter, ctx) : null } : {}),
       ...(status === "skipped" ? { manual_url: resolved ? manualUrlFor(adapter, ctx) : null,
         upgrade_cost_usd: AGENT_SECTION_MAX_USD } : {}),
       ...(adapter.id === "licenses_inspections" ? { depth: row?.depth ?? "recent", rows_returned: row?.rows_returned ?? null,
@@ -44,9 +46,11 @@ export function toDossierDocument(dossier: Dossier, rows: StoredSection[], baseU
     dossier_id: dossier.id, address: { input: dossier.address_input, resolved: dossier.address_resolved,
       opa_account: dossier.opa_account, resolution: dossier.resolution,
       ...(dossier.resolution === "fuzzy" ? { resolved_to: dossier.address_resolved } : {}), units: dossier.units },
-    status: dossier.status, has_errors: rows.some((r) => r.status === "error"),
+    status: dossier.status, outcome: dossier.outcome, has_errors: rows.some((r) => r.status === "error"),
     // The sheets that were asked for and not read, in report order: "complete" means finished, not gapless.
     gaps: resolved ? SECTIONS.map((a) => a.id).filter((id) => ["error", "unavailable"].includes(sections[id]!.status)) : [],
+    // The sheets whose source was searched and held nothing. They are not counted as read.
+    nothing_found: resolved ? SECTIONS.map((a) => a.id).filter((id) => sections[id]!.status === "empty") : [],
     tier: dossier.tier,
     created_at: dossier.created_at, completed_at: dossier.completed_at, spend_usd: dossier.spend_usd,
     cached: dossier.cached_from !== null, cached_from: dossier.cached_from,

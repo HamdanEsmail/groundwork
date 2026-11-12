@@ -16,7 +16,7 @@ export const PUBLIC_WATCH_SLOTS = 4;
 /** Days a public watch lasts before it expires. */
 export const PUBLIC_WATCH_TTL_DAYS = 7;
 /** Dossiers one visitor (hashed IP) may build per UTC day. */
-export const PUBLIC_DOSSIERS_PER_IP_PER_DAY = 3;
+export const PUBLIC_DOSSIERS_PER_IP_PER_DAY = 10;
 /** Agent upgrades one visitor may request per UTC day. */
 export const PUBLIC_UPGRADES_PER_IP_PER_DAY = 1;
 /** Watches one visitor may start per UTC day. */

@@ -243,7 +243,7 @@ describe("GET /", () => {
     expect(html).toContain("New permit at 1234 Market St");
     expect(html).toContain("1234 MARKET ST");
     expect(html).not.toContain("<script>alert(1)</script>");
-    expect(html).not.toContain("Three dossiers a day");
+    expect(html).not.toContain("dossiers a day can be drawn from here");
   });
 
   it("keeps the events of a visitor's watched address off the home", async () => {
@@ -312,13 +312,13 @@ describe("POST /go", () => {
       [tabUrl("99999 Nowhere St.", "property")]: fx("property-no-record.md"),
       [tabUrl("99999 NOWHERE ST", "property")]: fx("property-no-record.md"),
     });
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < PUBLIC_DOSSIERS_PER_IP_PER_DAY; i++) {
       const r = await formPost("/go", { address: "99999 Nowhere St." });
       expect(r.status).toBe(303);
     }
-    const fourth = await formPost("/go", { address: "99999 Nowhere St." });
-    expect(fourth.status).toBe(303);
-    expect(fourth.headers.get("location")).toBe("/?note=limit#top");
+    const oneMore = await formPost("/go", { address: "99999 Nowhere St." });
+    expect(oneMore.status).toBe(303);
+    expect(oneMore.headers.get("location")).toBe("/?note=limit#top");
   });
 
   it("treats nine digits as an OPA account", async () => {
@@ -450,7 +450,7 @@ describe("GET /d/:id", () => {
       },
     });
     const { html } = await page("/d/d-parent");
-    expect(html).toContain("This is the record of the whole building. It holds 2 units.");
+    expect(html).toContain("This is the record of the whole building. The city&#39;s atlas lists 2 condominium units at this address.");
     expect(html).toContain('name="address" value="222222222"');
     expect(html).toContain("UNIT 4B");
   });
@@ -461,7 +461,7 @@ describe("GET /d/:id", () => {
       units: { count: 12, list: null, list_url: "https://atlas.phila.gov/1234%20MARKET%20ST/condos" },
     });
     const { html } = await page("/d/d-parent-nolist");
-    expect(html).toContain("This is the record of the whole building. It holds 12 units.");
+    expect(html).toContain("This is the record of the whole building. The city&#39;s atlas lists 12 condominium units at this address.");
     expect(html).toContain("https://atlas.phila.gov/1234%20MARKET%20ST/condos");
   });
 
@@ -986,7 +986,7 @@ describe("what a visitor sees while Groundwork works", () => {
       const form = /<form class="ask" action="\/go" method="post">([\s\S]*?)<\/form>/.exec(html)?.[1] ?? "";
       expect(form, path).toMatch(/<button class="btn" type="submit" data-busy="Reading…">\s*Draw the dossier\s*<\/button>/);
       // Hidden until the button is pressed; the script then starts its clock.
-      expect(form, path).toMatch(/<p class="wait-note" data-wait="true" hidden="">\s*<span class="clock num" data-since="">0:00<\/span> so far\. Reading the four city pages takes about 40 seconds\.\s*<\/p>/);
+      expect(form, path).toMatch(/<p class="wait-note" data-wait="true" hidden="">\s*<span class="clock num" data-since="">0:00<\/span> so far\. Reading the four city pages usually takes under a minute, and up to two when the city&#39;s site is slow\.\s*<\/p>/);
     }
   });
 
@@ -1016,5 +1016,139 @@ describe("what a visitor sees while Groundwork works", () => {
     const { html } = await page("/d/d-buttons");
     expect(html).toMatch(/action="\/d\/d-buttons\/watch"><button class="btn quiet" type="submit" data-busy="Starting the watch…">/);
     expect(html).toMatch(/action="\/d\/d-buttons\/upgrade"><button class="btn" type="submit" data-busy="Starting…">/);
+  });
+});
+
+// --- What an outside tester found on 12 November 2026 -------------------------------------------------
+
+describe("what an outside tester found", () => {
+  const setData = (id: string, sid: SectionId, data: unknown) =>
+    env.DB.prepare("UPDATE sections SET data = ?1 WHERE dossier_id = ?2 AND section_id = ?3").bind(JSON.stringify(data), id, sid).run();
+  const dataOf = async (id: string, sid: SectionId): Promise<Json> => {
+    const row = await env.DB.prepare("SELECT data FROM sections WHERE dossier_id = ?1 AND section_id = ?2").bind(id, sid).first<{ data: string }>();
+    return JSON.parse(row!.data) as Json;
+  };
+  const article = (html: string, id: string): string => new RegExp(`<article[^>]*id="${id}"[\\s\\S]*?</article>`).exec(html)?.[0] ?? "";
+
+  it("calls a searched sheet that held nothing 'Nothing found', and does not count it as read", async () => {
+    await seedResolved("d-empty", { tier: "standard", statuses: { assessment_history: "ok", tax: "empty", schools: "empty", flood: "unavailable" } });
+    await setData("d-empty", "tax", { balance_usd: null, as_of: null, delinquent: null, no_results: true, blocked: false, error_message: null, raw: { balance_usd: null, as_of: null } });
+    await setData("d-empty", "schools", { catchment: [], no_results: true, blocked: false, error_message: "" });
+    const { html } = await page("/d/d-empty");
+    expect(html).toContain("5 of 9");
+    expect(html).toContain("2 searched and found nothing");
+    const tax = article(html, "tax");
+    expect(tax).toContain("Nothing found");
+    expect(tax).toContain("The source was searched and returned nothing for this address.");
+    expect(tax).toContain("Check by hand");
+    // A tax sheet with no balance does not print rows of "not stated".
+    expect(tax).not.toContain("not stated");
+    expect(article(html, "schools")).toContain("Nothing found");
+
+    const doc = (await (await callWorker("/api/dossiers/d-empty")).json()) as Json;
+    expect(doc.nothing_found).toEqual(["tax", "schools"]);
+    expect(doc.outcome).toBe("resolved");
+    expect((doc.sections as Record<string, Json>).tax).toMatchObject({
+      status: "empty",
+      reason_text: "The source was searched and returned nothing for this address.",
+      manual_url: expect.any(String),
+    });
+  });
+
+  it("shows a build year the city marks as estimated, and starts the record there", async () => {
+    await seedResolved("d-est");
+    const prop = await dataOf("d-est", "property");
+    await setData("d-est", "property", { ...prop, year_built: 1920, year_built_estimated: true, raw: { ...(prop.raw as Json), year_built: "1920 (estimated)" } });
+    const { html } = await page("/d/d-est");
+    expect(html).toContain("1920 (estimated)");
+    expect(html).toContain("Built about 1920");
+  });
+
+  it("reads the estimated year of a report stored before the reader kept it", async () => {
+    await seedResolved("d-est-old");
+    const prop = await dataOf("d-est-old", "property");
+    await setData("d-est-old", "property", { ...prop, year_built: null, raw: { ...(prop.raw as Json), year_built: "1920 (estimated)" } });
+    const { html } = await page("/d/d-est-old");
+    expect(html).toContain("1920 (estimated)");
+    expect(html).toContain("Built about 1920");
+  });
+
+  it("never calls the year of the oldest record the year the building went up", async () => {
+    await seedResolved("d-noyear");
+    const prop = await dataOf("d-noyear", "property");
+    await setData("d-noyear", "property", { ...prop, year_built: null, raw: { ...(prop.raw as Json), year_built: null } });
+    const { html } = await page("/d/d-noyear");
+    expect(html).not.toMatch(/Built (about )?\d{4}/);
+    expect(html).toContain("from the oldest dated record");
+    expect(html).not.toContain("from the year the building went up");
+  });
+
+  it("says a screenshot is still being taken for a sheet read a moment ago", async () => {
+    await seedResolved("d-fresh", { evidence: { property: null, zoning: null, licenses_inspections: null, deeds: null } });
+    await env.DB.prepare("UPDATE sections SET checked_at = ?1 WHERE dossier_id = 'd-fresh'").bind(new Date().toISOString()).run();
+    const { html } = await page("/d/d-fresh");
+    expect(html).toContain("The screenshot of this page is still being taken.");
+    expect(html).not.toContain("No screenshot was captured for this sheet.");
+  });
+
+  it("marks the listed unit that is the report's own record", async () => {
+    await seedResolved("d-parent-own", {
+      resolution: "parent",
+      units: { count: 2, list: [{ address: "1500-42 MARKET ST", opa_account: OPA }, { address: "1500S MARKET ST", opa_account: "875100060" }], list_url: "https://atlas.phila.gov/1500%20Market%20St/condos" },
+    });
+    const { html } = await page("/d/d-parent-own");
+    expect(html).toContain("1500-42 MARKET ST (this record)");
+    expect(html).not.toContain("1500S MARKET ST (this record)");
+  });
+
+  it("says on a condominium unit's report that permits and deeds are kept by address", async () => {
+    await seedResolved("d-unit", { resolved: "3600 MARKET ST STE 700, PHILADELPHIA, PA 19104-2650", opa: "883076625" });
+    const note = "The city keeps these records by address, so this sheet may cover the whole building and not only this unit.";
+    const { html } = await page("/d/d-unit");
+    expect(article(html, "licenses_inspections")).toContain(note);
+    expect(article(html, "deeds")).toContain(note);
+    expect(article(html, "property")).not.toContain(note);
+    await seedResolved("d-house");
+    expect((await page("/d/d-house")).html).not.toContain(note);
+  });
+
+  it("says when a report is a copy of one read earlier", async () => {
+    await seedResolved("d-orig");
+    await seedResolved("d-copy");
+    await env.DB.prepare("UPDATE dossiers SET cached_from = 'd-orig' WHERE id = 'd-copy'").run();
+    expect((await page("/d/d-copy")).html).toContain("This is a copy of a report read earlier. A report is reused for 24 hours.");
+    expect((await page("/d/d-orig")).html).not.toContain("This is a copy of a report read earlier.");
+  });
+
+  it("links the JSON of an unresolved report from its footer, and gives its outcome in that JSON", async () => {
+    await insertDossier(env.DB, {
+      id: "d-which-unit",
+      address_input: "3600 Market St",
+      outcome: "ambiguous",
+      tier: "free",
+      status: "failed",
+      added_by: "public",
+      created_at: NOW,
+      resolution_detail: { candidates: [], manual_url: "https://atlas.phila.gov/3600%20Market%20St/condos", how_to_resolve: "Choose the matching address and try again." },
+    });
+    const { html } = await page("/d/d-which-unit");
+    expect(html).toContain('href="/api/dossiers/d-which-unit"');
+    expect(html).not.toContain('href="#json"');
+    const doc = (await (await callWorker("/api/dossiers/d-which-unit")).json()) as Json;
+    expect(doc.outcome).toBe("ambiguous");
+  });
+
+  it("documents the unit field and the admin refusal on the about page", async () => {
+    const { html } = await page("/about");
+    expect(html).toContain("admin_required");
+    expect(html).toMatch(/unit(&quot;|"): ?(&quot;|")700/);
+  });
+});
+
+describe("the note at the daily limit", () => {
+  it("says the number a visitor really has", async () => {
+    const { html } = await page("/?note=limit");
+    expect(html).toContain(`${PUBLIC_DOSSIERS_PER_IP_PER_DAY} dossiers a day can be drawn from here. That number has been reached.`);
+    expect(html).not.toContain("Three dossiers a day");
   });
 });

@@ -129,13 +129,16 @@ function isTransientFetchFailure(error: string, status?: number): boolean {
  * `incomplete_after_retries`; a last transient failure is that error. A definite error is
  * returned at once. `opts.sleep` lets tests skip the waits. With `opts.emptyIsFinal`, an
  * `empty_content` answer is returned at once too: while an address is being resolved it means
- * "no such address in this spelling", not a page that was briefly empty.
+ * "no such address in this spelling", not a page that was briefly empty. With
+ * `opts.retryUnreachable`, `target_unreachable` is read again as well: for a page of an address
+ * the atlas has just served, it is a passing failure. With `opts.holds`, a page that was read
+ * and does not hold what the caller expects counts as incomplete.
  */
 export async function fetchAtlas(
   env: Env,
   address: string,
   tab: AtlasTab,
-  opts: { sleep?: (ms: number) => Promise<void>; emptyIsFinal?: boolean } = {},
+  opts: { sleep?: (ms: number) => Promise<void>; emptyIsFinal?: boolean; retryUnreachable?: boolean; holds?: (text: string) => boolean } = {},
 ): Promise<AtlasFetchResult> {
   const url = atlasUrl(address, tab);
   const sleep = opts.sleep ?? sleepMs;
@@ -151,9 +154,12 @@ export async function fetchAtlas(
       res = { ok: false, error: "fetch_failed" };
     }
     if (res.ok) {
-      if (!isIncomplete(res.text)) return { ok: true, text: res.text, url };
+      if (!isIncomplete(res.text) && (opts.holds?.(res.text) ?? true)) return { ok: true, text: res.text, url };
       lastError = "incomplete_after_retries";
-    } else if (isTransientFetchFailure(res.error, res.status) && !(opts.emptyIsFinal && res.error === "empty_content")) {
+    } else if (
+      (isTransientFetchFailure(res.error, res.status) || (opts.retryUnreachable === true && res.error === "target_unreachable")) &&
+      !(opts.emptyIsFinal && res.error === "empty_content")
+    ) {
       lastError = res.error;
     } else {
       return { ok: false, error: res.error, url };

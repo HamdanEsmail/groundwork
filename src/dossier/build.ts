@@ -1,5 +1,5 @@
 // Builds dossiers from address resolution, free sections, cached results, and tiered reads.
-import { AtlasUnavailableError, resolveAddress, type ResolveInput, type ResolveResult } from "../address/resolve";
+import { AtlasUnavailableError, resolveAddress, type ResolveInput, type ResolveResult, type UnitsListed } from "../address/resolve";
 import { AGENT_SECTION_MAX_USD, CACHE_HOURS, FLOOD_RETRY_DAYS, PUBLIC_DOSSIER_TTL_DAYS, PUBLIC_DOSSIERS_PER_IP_PER_DAY,
   SPEND_PAUSE_USD } from "../core/limits";
 import { PRICES, totalSpend } from "../core/spend";
@@ -165,6 +165,25 @@ export async function applyTier(env: Env, id: string, tier: Tier, ctx: SectionCo
   return selected.length;
 }
 
+/**
+ * What to do when an address names several properties. For a condominium building it says how
+ * many units there are and how many of them the city's list showed: that list holds its first
+ * rows only, and a unit it does not show is still found when it is written after the address.
+ */
+function chooseAdvice(units: UnitsListed | undefined): string {
+  if (units === undefined) return "Choose the matching address and try again.";
+  const form = `in the form "${units.building} Unit N"`;
+  // Said only when the atlas answered that unit with the building's own page, never after a failed read.
+  const missing = units.not_found ? `The city's atlas did not find unit ${units.not_found} at ${units.building}. ` : "";
+  if (units.listed === 0) {
+    return `${missing}This address is a building of ${units.count} condominium units, and the city's list of them could not be read just now. Add the unit to the address ${form}, or open the city's list.`;
+  }
+  if (units.listed < units.count) {
+    return `${missing}This building has ${units.count} condominium units, and the city's list shows the first ${units.listed}. Choose one, or add the unit to the address ${form}.`;
+  }
+  return `${missing}This building has ${units.count} condominium units. Choose the one you mean and try again.`;
+}
+
 /** Resolves and builds or reuses a dossier, returning its response fields; public creates consume a daily slot. */
 export async function createDossier(env: Env, input: CreateInput, who: Caller,
   opts: { sleep?: (ms: number) => Promise<void> } = {}) {
@@ -207,8 +226,8 @@ export async function createDossier(env: Env, input: CreateInput, who: Caller,
           how_to_resolve: noHouseNumber
             ? "Include the house number, for example 1234 Market St, or use the 9-digit OPA account."
             : "Check the address or OPA account and try again." }
-      : { candidates: result.candidates, manual_url: "https://atlas.phila.gov/",
-          how_to_resolve: "Choose the matching address and try again." };
+      : { candidates: result.candidates, manual_url: result.units?.list_url ?? "https://atlas.phila.gov/",
+          how_to_resolve: chooseAdvice(result.units) };
     const dossierId = await insertDossier(env.DB, {
       ...common, tier, status: "failed", outcome: result.outcome, resolution_detail: detail,
     });

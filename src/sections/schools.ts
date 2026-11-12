@@ -1,5 +1,5 @@
 // Catchment schools from the School District of Philadelphia finder.
-import { classify, instructions, numberValue, objectResult, optional, schema, validStopFlags } from "./agentCommon";
+import { classify, instructions, numberValue, objectResult, optional, schema, streetAndUnit, validStopFlags } from "./agentCommon";
 import type { AgentSectionData, SectionAdapter } from "./types";
 const START_URL = "https://webapps1.philasd.org/school_finder/";
 /** Reads one school row or returns null; unknown distances remain null instead of being guessed. */
@@ -32,7 +32,8 @@ export function parseSchoolsResult(result: unknown): AgentSectionData | null {
 export const schoolsAdapter: SectionAdapter<AgentSectionData> = {
   id: "schools", label: "Catchment schools", agency: "School District of Philadelphia", method: "agent", monitorable: false,
   url: () => START_URL,
-  goal: (ctx) => `${instructions(START_URL)} Search for ${ctx.address}. Return catchment rows with level, name, address ` +
+  // A catchment is drawn by street, so a condominium unit is searched by its building's address.
+  goal: (ctx) => `${instructions(START_URL)} Search for ${streetAndUnit(ctx.address).street}. Return catchment rows with level, name, address ` +
     "and distance_miles as shown (null when absent).",
   outputSchema: schema({ catchment: { type: "array", items: { type: "object", properties: {
     level: { type: "string" }, name: { type: "string" }, address: { type: "string", nullable: true },

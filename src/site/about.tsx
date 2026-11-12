@@ -38,8 +38,8 @@ const CAPTURES = [
 ];
 
 const API_ROUTES = [
-  { route: "POST /api/dossiers", line: 'Starts a dossier from {"address": "1234 Market St"} or {"opa_account": "883309050"}. Answers 202 with its id and report link; an address the city cannot place answers 200 with status "failed" and how to resolve it.' },
-  { route: "GET /api/dossiers/:id", line: 'One dossier, every sheet and its source link. "gaps" names the sheets that were asked for and not read; each of those carries "reason" and "reason_text".' },
+  { route: "POST /api/dossiers", line: 'Starts a dossier from {"address": "1234 Market St"} or {"opa_account": "883309050"}. A condominium unit goes in the address ("3600 Market St Unit 700") or beside it: {"address": "3600 Market St", "unit": "700"}. The call answers once the four free sheets are read, which can take two minutes: 202 with its id and report link. An address the city cannot place, or one that names several properties, answers 200 with status "failed", "outcome" ("no_match" or "ambiguous"), the addresses to choose from and how to resolve it.' },
+  { route: "GET /api/dossiers/:id", line: 'One dossier, every sheet and its source link. "gaps" names the sheets that were asked for and not read; each of those carries "reason" and "reason_text". "nothing_found" names the sheets whose source was searched and held nothing.' },
   { route: "POST /api/dossiers/:id/upgrade", line: "Reads the four remaining sheets of a free dossier with TinyFish Agent. Once a day from one place." },
   { route: "POST /api/dossiers/:id/retry", line: 'With the admin token: reads again the sheets that ended in error, or only those named in {"sections": [...]}.' },
   { route: "GET /api/sources", line: "The nine sources and when each was last read." },
@@ -48,7 +48,7 @@ const API_ROUTES = [
   { route: "GET /api/addresses/:opa/history", line: "Dossiers and events of one account, when it is curated or watched." },
   { route: "GET /api/dossiers/:id/nearby", line: "Events of other watched parcels on the same block." },
   { route: "GET /api/stats", line: "Counts of dossiers, sheets, watches, events and spend." },
-  { route: "Refusals", line: 'A refused call answers {"error": "not_found"} (or rate_limited, invalid_input, atlas_unavailable, budget_paused) with the matching HTTP status.' },
+  { route: "Refusals", line: 'A refused call answers {"error": "not_found"} (or rate_limited, invalid_input, atlas_unavailable, budget_paused, admin_required) with the matching HTTP status.' },
 ];
 
 function limitSentences(): string[] {

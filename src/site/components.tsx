@@ -37,7 +37,8 @@ export function Frame(props: {
 }
 
 export function statusWord(status: SectionStatus): { word: string; cls: string } {
-  if (status === "ok" || status === "empty") return { word: "Read", cls: "" };
+  if (status === "ok") return { word: "Read", cls: "" };
+  if (status === "empty") return { word: "Nothing found", cls: "wait" };
   if (status === "pending") return { word: "Being read", cls: "wait" };
   if (status === "skipped") return { word: "Not read", cls: "wait" };
   return { word: "Could not be read", cls: "gap" };
@@ -106,9 +107,14 @@ export function RecordTable(props: {
   );
 }
 
-export function Evidence(props: { url: string | null; label: string; readAt: string | null }) {
+export function Evidence(props: { url: string | null; label: string; readAt: string | null; pending?: boolean }) {
   if (!props.url) {
-    return <p class="noshot">No screenshot was captured for this sheet. The link above opens the page itself.</p>;
+    // A screenshot is taken after the sheet is read and arrives a minute or two later.
+    return props.pending ? (
+      <p class="noshot">The screenshot of this page is still being taken. Reload in a minute.</p>
+    ) : (
+      <p class="noshot">No screenshot was captured for this sheet. The link above opens the page itself.</p>
+    );
   }
   const when = stamp(props.readAt);
   return (
@@ -136,7 +142,7 @@ export function AskButton() {
         <span class="clock num" data-since="">
           0:00
         </span>{" "}
-        so far. Reading the four city pages takes about 40 seconds.
+        so far. Reading the four city pages usually takes under a minute, and up to two when the city's site is slow.
       </p>
     </>
   );

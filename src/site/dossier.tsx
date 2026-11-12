@@ -1,6 +1,7 @@
 // The dossier screen of the comp, in every condition the plan names.
 import type { Units } from "../address/resolve";
 import type { DossierDocument } from "../dossier/document";
+import { normalizeAddress } from "../address/normalize";
 import { SECTIONS } from "../sections/index";
 import type { SectionId, SectionStatus } from "../sections/types";
 import type { ResolutionDetail } from "../db/types";
@@ -39,6 +40,7 @@ function FailedDossier(props: { doc: DossierDocument; detail: ResolutionDetail |
       bar
       pageUrl={props.pageUrl}
       base={props.base}
+      jsonHref={`/api/dossiers/${props.doc.dossier_id}`}
     >
       <main>
         <div class="title">
@@ -94,10 +96,12 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
   const { title, city } = splitAddress(doc.address.resolved, doc.address.input);
   const ctx = { address: title, opa: doc.address.opa_account ?? "" };
   const readAt = doc.completed_at ?? doc.created_at;
-  const sheetsRead = SECTIONS.filter((s) => {
-    const st = doc.sections[s.id as keyof typeof doc.sections]?.status;
-    return st === "ok" || st === "empty";
-  }).length;
+  const count = (status: SectionStatus) => SECTIONS.filter((s) => doc.sections[s.id as keyof typeof doc.sections]?.status === status).length;
+  // A sheet whose source was searched and held nothing is not a sheet that was read.
+  const sheetsRead = count("ok");
+  const foundNothing = count("empty");
+  // On a condominium unit's report the licences and deeds sheets are the address's, not only the unit's.
+  const isUnit = normalizeAddress(title).unit !== null;
   const figs = figures(doc);
   const tl = buildTimeline(doc);
   const skipped = SECTIONS.map((s, i) => ({ n: i + 1, id: s.id, sec: doc.sections[s.id as keyof typeof doc.sections] })).filter(
@@ -175,7 +179,7 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
             <div>
               <dt>Sheets read</dt>
               <dd>
-                {sheetsRead} of 9
+                {sheetsRead} of 9{foundNothing ? `, ${foundNothing} searched and found nothing` : ""}
               </dd>
             </div>
             <div>
@@ -191,7 +195,10 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
           {parent ? (
             <>
               <p class="flag">
-                This is the record of the whole building. It holds {parent.count} unit{parent.count === 1 ? "" : "s"}.
+                This is the record of the whole building.{" "}
+                {parent.kind === "active_parcels"
+                  ? `The city counts ${parent.count} active parcels at this address.`
+                  : `The city's atlas lists ${parent.count} condominium unit${parent.count === 1 ? "" : "s"} at this address.`}
               </p>
               {parent.list?.length ? (
                 <ul class="units">
@@ -201,6 +208,7 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
                         <input type="hidden" name="address" value={u.opa_account} />
                         <button class="btn quiet" type="submit">
                           {u.address}
+                          {u.opa_account === doc.address.opa_account ? " (this record)" : ""}
                         </button>
                       </form>
                     </li>
@@ -213,6 +221,7 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
               ) : null}
             </>
           ) : null}
+          {doc.cached ? <p class="flag">This is a copy of a report read earlier. A report is reused for 24 hours.</p> : null}
           {props.flag ? <p class="flag">{props.flag}</p> : null}
         </div>
         {figs.length ? (
@@ -230,7 +239,7 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
             <h2 id="dates" class="rise">
               The record, by date
             </h2>
-            <p class="rise">Every dated record in the sheets read so far, from the year the building went up. The free sheets show the latest five of each kind. Point at a mark to read it.</p>
+            <p class="rise">Every dated record in the sheets read so far, {tl.fromBuilt ? "from the year the building went up" : "from the oldest dated record"}. The free sheets show the latest five of each kind. Point at a mark to read it.</p>
             <div class="lanes">
               {tl.lanes.map((lane) => (
                 <div class="lane rise">
@@ -275,7 +284,7 @@ function ResolvedDossier(props: { doc: DossierDocument; flag: string | null; uni
           </nav>
           <div class="sheets">
             {shown.map(({ n, id, sec }) => (
-              <SheetArticle n={n} id={id} sec={sec} ctx={ctx} />
+              <SheetArticle n={n} id={id} sec={sec} ctx={ctx} unit={isUnit} />
             ))}
             <RestSheet skipped={skipped.map((s) => ({ id: s.id, sec: s.sec }))} ctx={ctx} canUpgrade={canUpgrade} dossierId={doc.dossier_id} />
           </div>

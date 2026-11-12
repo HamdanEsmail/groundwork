@@ -2,6 +2,7 @@
 // is never invented for a sheet that was not read.
 import type { DossierDocument } from "../dossier/document";
 import type { DeedsData, LicensesInspectionsData, PropertyData, ZoningData } from "../sections/types";
+import { builtYear } from "../sections/property";
 import { day, sentence, usd } from "./format";
 
 export interface Tick {
@@ -23,6 +24,8 @@ export interface Timeline {
   years: { label: string; left: string }[];
   lanes: Lane[];
   readout: string;
+  /** True when the record starts at the year the building went up; false when it starts at its oldest dated record. */
+  fromBuilt: boolean;
 }
 
 function isoTime(iso: string | null | undefined): number | null {
@@ -81,7 +84,8 @@ export function buildTimeline(doc: DossierDocument, now = new Date()): Timeline 
     if (t) dated.push({ t, lane: "appeals" });
   }
 
-  const startYear = property?.year_built ?? (dated.length ? new Date(Math.min(...dated.map((d) => d.t))).getUTCFullYear() : null);
+  const built = builtYear(property);
+  const startYear = built?.year ?? (dated.length ? new Date(Math.min(...dated.map((d) => d.t))).getUTCFullYear() : null);
   if (startYear == null && dated.length === 0) return null;
   const year = startYear ?? now.getUTCFullYear();
   const endYear = now.getUTCFullYear() + 1;
@@ -157,9 +161,11 @@ export function buildTimeline(doc: DossierDocument, now = new Date()): Timeline 
     });
   }
 
-  if (lanes.every((l) => l.ticks.length === 0) && property?.year_built == null) return null;
+  if (lanes.every((l) => l.ticks.length === 0) && built === null) return null;
 
-  const years: { label: string; left: string }[] = [{ label: `Built ${year}`, left: "0%" }];
+  // Only a year the city gives for the building is called "Built". The year of the oldest record is just a year.
+  const first = built === null ? String(year) : built.estimated ? `Built about ${year}` : `Built ${year}`;
+  const years: { label: string; left: string }[] = [{ label: first, left: "0%" }];
   const nowYear = now.getUTCFullYear();
   for (let y = Math.ceil((year + 1) / 10) * 10; y < nowYear; y += 10) {
     years.push({ label: String(y), left: `${pct(Date.UTC(y, 0, 1), start, end).toFixed(2)}%` });
@@ -167,7 +173,7 @@ export function buildTimeline(doc: DossierDocument, now = new Date()): Timeline 
   years.push({ label: String(nowYear), left: `${pct(Date.UTC(nowYear, 0, 1), start, end).toFixed(2)}%` });
 
   const all = lanes.flatMap((l) => l.ticks).sort((a, b) => b.at - a.at);
-  return { startYear: year, endYear, years, lanes, readout: all[0]?.say ?? "Point at a mark to read it." };
+  return { startYear: year, endYear, years, lanes, readout: all[0]?.say ?? "Point at a mark to read it.", fromBuilt: built !== null };
 }
 
 export function figures(doc: DossierDocument): { value: string; line: string; alert?: boolean }[] {
@@ -181,9 +187,10 @@ export function figures(doc: DossierDocument): { value: string; line: string; al
   if (property?.assessed_value_usd != null) {
     out.push({ value: usd(property.assessed_value_usd), line: "assessed value, Office of Property Assessment" });
   }
-  if (property && (property.improvement_area_sqft != null || property.year_built != null)) {
+  const year = builtYear(property);
+  if (property && (property.improvement_area_sqft != null || year !== null)) {
     const area = property.improvement_area_sqft != null ? intFmt(property.improvement_area_sqft) : null;
-    const built = property.year_built != null ? `, built ${property.year_built}` : "";
+    const built = year !== null ? `, built ${year.estimated ? "about " : ""}${year.year}` : "";
     if (area) out.push({ value: area, line: `square feet of building${built}` });
   }
   if (zoning?.base_district) {

@@ -5,6 +5,8 @@ import { getSection, manualUrlFor } from "../sections/index";
 import type { DeedsData, LicensesInspectionsData, PropertyData, SectionId, SectionStatus, ZoningData } from "../sections/types";
 import { Evidence, Facts, RecordTable, shownLabel, StatusWord } from "./components";
 import { day, int, safeHttpUrl, sentence, stamp, stated, usd, words } from "./format";
+import { NOTHING_FOUND_TEXT } from "../dossier/reasons";
+import { builtYear } from "../sections/property";
 import { gapReason } from "./notes";
 
 type SectionDoc = DossierDocument["sections"][keyof DossierDocument["sections"]];
@@ -115,6 +117,7 @@ function PropertyBody(d: PropertyData | null): Child {
       : "not stated";
   const homestead = d?.homestead === true ? "Yes" : d?.homestead === false ? "None" : "not stated";
   const area = d?.improvement_area_sqft != null ? `${int(d.improvement_area_sqft)} sq ft` : "not stated";
+  const built = builtYear(d);
   return (
     <Facts
       items={[
@@ -122,7 +125,7 @@ function PropertyBody(d: PropertyData | null): Child {
         { label: "Last sale", value: sale, kind: "big" },
         { label: "Owner", value: owners },
         { label: "Building", value: stated(d?.building_description) },
-        { label: "Year built", value: d?.year_built != null ? String(d.year_built) : "not stated" },
+        { label: "Year built", value: built ? (built.estimated ? `${built.year} (estimated)` : String(built.year)) : "not stated" },
         { label: "Building area", value: area },
         { label: "Homestead exemption", value: homestead },
         { label: "Mailing address", value: mailing },
@@ -426,7 +429,7 @@ function headerLine(sec: SectionDoc, ctx: { address: string; opa: string }, id: 
       </p>
     );
   }
-  if (sec.status === "ok" || sec.status === "empty") {
+  if (sec.status === "ok") {
     return (
       <p>
         {sec.source}. Read {stamp(sec.checked_at)} with TinyFish {method}.{" "}
@@ -435,6 +438,20 @@ function headerLine(sec: SectionDoc, ctx: { address: string; opa: string }, id: 
     );
   }
   const manual = safeHttpUrl((sec as { manual_url?: string }).manual_url ?? (adapter ? manualUrlFor(adapter, ctx) : null));
+  if (sec.status === "empty") {
+    return (
+      <p>
+        {sec.source}. Searched {stamp(sec.checked_at)} with TinyFish {method}.{" "}
+        {source ? <a href={source}>Open the source page</a> : null}
+        {manual ? (
+          <>
+            {" "}
+            <a href={manual}>Check by hand</a>
+          </>
+        ) : null}
+      </p>
+    );
+  }
   return (
     <p>
       {sec.source}. {source ? <a href={source}>Open the source page</a> : null}
@@ -448,16 +465,25 @@ function headerLine(sec: SectionDoc, ctx: { address: string; opa: string }, id: 
   );
 }
 
+/** A free sheet's screenshot is taken after the sheet is read. Within this long, a missing one is still on its way. */
+const SCREENSHOT_WAIT_MS = 10 * 60_000;
+
 export function SheetArticle(props: {
   n: number;
   id: SectionId;
   sec: SectionDoc;
   ctx: { address: string; opa: string };
   delay?: string;
+  /** True on the report of a condominium unit: two sheets are kept by address, not by unit. */
+  unit?: boolean;
+  now?: Date;
 }) {
   const adapter = getSection(props.id);
   const label = adapter?.label ?? props.id;
   const gap = props.sec.status === "error" || props.sec.status === "unavailable";
+  const byAddress = props.unit === true && (props.id === "licenses_inspections" || props.id === "deeds");
+  const readAt = props.sec.checked_at ? Date.parse(props.sec.checked_at) : NaN;
+  const shotPending = Number.isFinite(readAt) && (props.now ?? new Date()).getTime() - readAt < SCREENSHOT_WAIT_MS;
   return (
     <article class={gap ? "sh gap rise" : "sh rise"} id={props.id} style={props.delay ? `--d:${props.delay}` : undefined}>
       <header>
@@ -465,16 +491,22 @@ export function SheetArticle(props: {
         <h2>{label}</h2>
         <StatusWord status={props.sec.status as SectionStatus} />
         {headerLine(props.sec, props.ctx, props.id)}
+        {byAddress ? <p>The city keeps these records by address, so this sheet may cover the whole building and not only this unit.</p> : null}
       </header>
       {props.sec.status === "pending" ? (
         <p>Being read from {props.sec.source}.</p>
       ) : props.sec.status === "error" || props.sec.status === "unavailable" ? (
         <p>{gapReason((props.sec as { reason?: string }).reason)}</p>
+      ) : props.sec.status === "empty" ? (
+        <>
+          <p>{NOTHING_FOUND_TEXT}</p>
+          <Evidence url={props.sec.evidence_url} label={label} readAt={props.sec.checked_at} pending={shotPending && props.sec.method === "fetch"} />
+        </>
       ) : (
         <>
           {SheetBody({ id: props.id, sec: props.sec })}
-          {props.sec.status === "ok" || props.sec.status === "empty" ? (
-            <Evidence url={props.sec.evidence_url} label={label} readAt={props.sec.checked_at} />
+          {props.sec.status === "ok" ? (
+            <Evidence url={props.sec.evidence_url} label={label} readAt={props.sec.checked_at} pending={shotPending && props.sec.method === "fetch"} />
           ) : null}
         </>
       )}

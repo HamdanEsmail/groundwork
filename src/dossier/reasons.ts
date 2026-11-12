@@ -3,10 +3,14 @@
 
 const NOT_FINISHED = "The read did not finish. It can be tried again.";
 
+/** What a sheet says when its source was searched and held nothing: that is an answer, but it is not a read record. */
+export const NOTHING_FOUND_TEXT = "The source was searched and returned nothing for this address.";
+
 const FIXED: Record<string, string> = {
   blocked: "The office's page turned the automated browser away, or asked it to sign in.",
   unreadable_result: "The page opened, but what came back could not be read as a table.",
   rows_not_read: "The page lists the records, but their rows did not come back in the time allowed.",
+  balance_not_read: "The search page was reached, but the read stopped before it got to a balance.",
   "FEMA's map search returned no results in an automated browser": "FEMA's map search gives an automated browser no result.",
   agent_timeout: NOT_FINISHED,
   agent_poll_failed: NOT_FINISHED,
