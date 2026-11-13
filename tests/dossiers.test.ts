@@ -786,6 +786,7 @@ describe("resolution failures and input", () => {
     ["an http callback_url", { address: "1234 Market St", callback_url: "http://example.test/hook" }],
     ["a callback_url that is not a URL", { address: "1234 Market St", callback_url: "https://" }],
     ["a non-string unit", { address: "1234 Market St", unit: 4 }],
+    ["a unit over 20 characters", { address: "1234 Market St", unit: "4".repeat(21) }],
     ["a non-boolean curated", { address: "1234 Market St", curated: "yes" }],
     ["an unknown field", { address: "1234 Market St", color: "red" }],
   ])("rejects %s with 400 invalid_input and counts nothing", async (_label, body) => {

@@ -22,7 +22,8 @@ function valid(value: unknown): value is CreateInput {
   if ((v.address === undefined) === (v.opa_account === undefined)) return false;
   if (v.address !== undefined && (typeof v.address !== "string" || !v.address.trim() || v.address.length > 200)) return false;
   if (v.opa_account !== undefined && (typeof v.opa_account !== "string" || !/^\d{9}$/.test(v.opa_account))) return false;
-  if (v.unit !== undefined && typeof v.unit !== "string") return false;
+  // A unit is a few characters ("4B", "PH-12"). It is stored and sent on to the city's atlas, so it has a limit as the address has.
+  if (v.unit !== undefined && (typeof v.unit !== "string" || v.unit.length > 20)) return false;
   if (v.tier !== undefined && !["free", "standard", "deep"].includes(v.tier as string)) return false;
   if (v.fresh !== undefined && typeof v.fresh !== "boolean") return false;
   if (v.curated !== undefined && typeof v.curated !== "boolean") return false;
